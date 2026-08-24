@@ -1,0 +1,20 @@
+# ========================================
+# IGNORE EVERYTHING BY DEFAULT
+# ========================================
+*
+
+# ========================================
+# ALLOW THESE FILES
+# ========================================
+!.gitignore
+!.nojekyll
+!README.md
+!LICENSE
+
+# ========================================
+# LECTURE SLIDES (HTML only, no source files)
+# ========================================
+!lecture-slides/
+
+# Week 01
+!lecture-slides/week01-foundations-and-monte-carlo.html
