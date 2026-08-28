@@ -12,7 +12,7 @@
 !LICENSE
 
 # ========================================
-# LECTURE SLIDES (HTML only, no source files)
+# LECTURE SLIDES (HTML only, no source files, HTML files are generated with embedded resources)
 # ========================================
 !lecture-slides/
 
@@ -20,7 +20,7 @@
 !lecture-slides/week01-foundations-and-monte-carlo.html
 
 # ========================================
-# LABS (HTML only, no source files)
+# LABS (HTML only, no source files, HTML files are generated with embedded resources)
 # ========================================
 !labs/
 
