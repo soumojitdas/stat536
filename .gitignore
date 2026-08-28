@@ -18,4 +18,11 @@
 
 # Week 01
 !lecture-slides/week01-foundations-and-monte-carlo.html
+
+# ========================================
+# LABS (HTML only, no source files)
+# ========================================
+!labs/
+
+# Lab 01
 !labs/lab01-foundations-and-monte-carlo-handout.html
