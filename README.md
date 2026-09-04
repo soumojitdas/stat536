@@ -7,6 +7,7 @@ Lecture slides for STAT 536, Fall 2026.
 | Week | Topic | Link |
 |------|-------|------|
 | 1 | Foundations & Monte Carlo | [View](https://soumojitdas.github.io/stat536/lecture-slides/week01-foundations-and-monte-carlo.html) |
+| 2 | Random Variable Generation | [View](https://soumojitdas.github.io/stat536/lecture-slides/week02-random-variable-generation.html) |
 
 ## Labs
 
