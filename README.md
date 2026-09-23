@@ -10,6 +10,7 @@ Lecture slides for STAT 536, Fall 2026.
 | 2 | Random Variable Generation | [View](https://soumojitdas.github.io/stat536/lecture-slides/week02-random-variable-generation.html) |
 | 3 | Accept-Reject Sampling | [View](https://soumojitdas.github.io/stat536/lecture-slides/week03-accept-reject.html) |
 | 4 | Advanced Sampling & Variance Reduction | [View](https://soumojitdas.github.io/stat536/lecture-slides/week04-advanced-sampling-and-variance-reduction.html) |
+| 5 | The Bootstrap | [View](https://soumojitdas.github.io/stat536/lecture-slides/week05-bootstrap.html) |
 
 ## Labs
 
