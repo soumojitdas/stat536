@@ -17,7 +17,8 @@ Lecture slides for STAT 536, Fall 2026.
 | Lab | Topic | Link |
 |-----|-------|------|
 | 1 | Foundations & Monte Carlo | [View](https://soumojitdas.github.io/stat536/labs/lab01-foundations-and-monte-carlo-handout.html) |
-| 2 | Accept-Reject Sampling | [View](https://soumojitdas.github.io/stat536/labs/lab02-accept-reject-handout.html) |
+| 2 | Foundations & Monte Carlo (continued) | [View](https://soumojitdas.github.io/stat536/labs/lab01-foundations-and-monte-carlo-handout.html) |
+| 3 | Accept-Reject Sampling | [View](https://soumojitdas.github.io/stat536/labs/lab02-accept-reject-handout.html) |
 | 4 | Importance Sampling & Variance Reduction | [View](https://soumojitdas.github.io/stat536/labs/lab04-importance-sampling-and-variance-reduction-handout.html) |
 | 5 | Bootstrap Confidence Intervals | [View](https://soumojitdas.github.io/stat536/labs/lab05-bootstrap-handout.html) |
 
