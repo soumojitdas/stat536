@@ -12,6 +12,7 @@ Lecture slides for STAT 536, Fall 2026.
 | 4 | Advanced Sampling & Variance Reduction | [View](https://soumojitdas.github.io/stat536/lecture-slides/week04-advanced-sampling-and-variance-reduction.html) |
 | 5 | The Bootstrap | [View](https://soumojitdas.github.io/stat536/lecture-slides/week05-bootstrap.html) |
 | 6 | Jackknife, BCa & Cross-Validation | [View](https://soumojitdas.github.io/stat536/lecture-slides/week06-jackknife-bca-cv.html) |
+| 7 | Bayes' Rule & Conjugate Priors | [View](https://soumojitdas.github.io/stat536/lecture-slides/week07-bayes-rule-and-conjugate-priors.html) |
 
 ## Labs
 
