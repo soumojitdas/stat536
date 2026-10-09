@@ -24,6 +24,7 @@ Lecture slides for STAT 536, Fall 2026.
 | 4 | Importance Sampling & Variance Reduction | [View](https://soumojitdas.github.io/stat536/labs/lab04-importance-sampling-and-variance-reduction-handout.html) |
 | 5 | Bootstrap Confidence Intervals | [View](https://soumojitdas.github.io/stat536/labs/lab05-bootstrap-handout.html) |
 | 6 | Jackknife & BCa Bootstrap | [View](https://soumojitdas.github.io/stat536/labs/lab06-jackknife-bca-handout.html) |
+| 7 | Bayes' Rule & Conjugate Priors | [View](https://soumojitdas.github.io/stat536/labs/lab07-bayes-rule-and-conjugate-priors-handout.html) |
 
 ## Instructor
 
