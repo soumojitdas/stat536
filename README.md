@@ -26,6 +26,7 @@ Lecture slides for STAT 536, Fall 2026.
 | 5 | Bootstrap Confidence Intervals | [View](https://soumojitdas.github.io/stat536/labs/lab05-bootstrap-handout.html) |
 | 6 | Jackknife & BCa Bootstrap | [View](https://soumojitdas.github.io/stat536/labs/lab06-jackknife-bca-handout.html) |
 | 7 | Bayes' Rule & Conjugate Priors | [View](https://soumojitdas.github.io/stat536/labs/lab07-bayes-rule-and-conjugate-priors-handout.html) |
+| 8–9 | The EM Algorithm | [View](https://soumojitdas.github.io/stat536/labs/lab08-em-algorithm-handout.html) |
 
 ## Instructor
 
