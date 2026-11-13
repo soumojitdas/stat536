@@ -30,6 +30,7 @@ Lecture slides for STAT 536, Fall 2026.
 | 7 | Bayes' Rule & Conjugate Priors | [View](https://soumojitdas.github.io/stat536/labs/lab07-bayes-rule-and-conjugate-priors-handout.html) |
 | 8–9 | The EM Algorithm | [View](https://soumojitdas.github.io/stat536/labs/lab08-em-algorithm-handout.html) |
 | 11 | Markov Chains | [View](https://soumojitdas.github.io/stat536/labs/lab09-markov-chains-handout.html) ([Solutions](https://soumojitdas.github.io/stat536/labs/lab09-markov-chains.html)) |
+| 12 | Metropolis–Hastings | [View](https://soumojitdas.github.io/stat536/labs/lab10-metropolis-hastings-handout.html) |
 
 ## Instructor
 
