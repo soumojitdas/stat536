@@ -16,6 +16,7 @@ Lecture slides for STAT 536, Fall 2026.
 | 8 | Likelihood, Information & Divergence | [View](https://soumojitdas.github.io/stat536/lecture-slides/week08-em.html) |
 | 11 | Markov Chains | [View](https://soumojitdas.github.io/stat536/lecture-slides/week11-markov-chains.html) |
 | 12 | Metropolis & Metropolis–Hastings | [View](https://soumojitdas.github.io/stat536/lecture-slides/week12-metropolis-hastings.html) |
+| 13 | Gibbs Sampling | [View](https://soumojitdas.github.io/stat536/lecture-slides/week13-gibbs-sampling.html) |
 
 ## Labs
 
