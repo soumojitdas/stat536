@@ -442,7 +442,7 @@
   <meta name="generator" content="quarto-1.10.18">
 
   <meta name="author" content="Soumojit Das">
-  <title>Week 13: Gibbs Sampling</title>
+  <title>Week 13: Gibbs Sampling and Langevin Proposals</title>
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, minimal-ui">
@@ -1169,7 +1169,7 @@ src: url(data:font/ttf;base64,AAEAAAARAQAABAAQR0RFRixlLJgAAAJMAAAAuEdQT1Mh5sVzAA
     <div class="slides">
 
 <section id="title-slide" class="quarto-title-block center">
-  <h1 class="title">Week 13: Gibbs Sampling</h1>
+  <h1 class="title">Week 13: Gibbs Sampling and Langevin Proposals</h1>
   <p class="subtitle">STAT 536 — Statistical Computing</p>
 
 <div class="quarto-title-authors">
@@ -1299,6 +1299,7 @@ align-items: baseline;
 .reveal .w13 .w13-leg-sw { flex: none; display: block; }
 .reveal .w13 .w13-leg-label { white-space: normal; }
 .reveal .w13 .w13-leg.w13-dim { opacity: 0.38; }
+.reveal .w13 .w13-legend.w13-legend-tight { gap: 1px; line-height: 24px; }
 .reveal .w13 .w13-legend.w13-legend-2 { display: grid; grid-template-columns: fit-content(50%) minmax(0, 1fr); column-gap: 28px; align-items: start; }
 .reveal .w13 .w13-legcol { min-width: 0; display: flex; flex-direction: column; gap: 3px; }
 .reveal .w13 .w13-slot { flex: 1 1 0; min-height: 0; overflow: hidden; }
@@ -1577,10 +1578,236 @@ color: #8a8577;
 <li><strong>Blocked Gibbs:</strong> draw correlated coordinates together from their joint full conditional, when that is a distribution we can sample; here <span class="math inline">\((x_1, x_2)\)</span> as one block is an exact draw from <span class="math inline">\(\pi\)</span>.</li>
 </ul>
 <p>where <span class="math inline">\(y_i\)</span>: the binary outcome of case <span class="math inline">\(i\)</span>; <span class="math inline">\(\eta_i\)</span>: its linear predictor; <span class="math inline">\(\beta_0\)</span>, <span class="math inline">\(\beta_1\)</span>: the intercept and the slope; <span class="math inline">\(\rho\)</span>: the correlation; ESS: the effective sample size; <span class="math inline">\(N\)</span>: the number of sweeps; <span class="math inline">\(\pi\)</span>: the target.</p>
+</section></section>
+<section>
+<section id="gradients-and-langevin-proposals" class="title-slide slide level1 center">
+<h1>Gradients and Langevin Proposals</h1>
 <!-- NEW 2026 -->
+</section>
+<section id="a-proposal-that-uses-the-slope-of-logpi" class="slide level2">
+<h2>A Proposal That Uses the Slope of <span class="math inline">\(\log\pi\)</span></h2>
+<ul>
+<li>The random walk proposes <span class="math inline">\(Y = x + sZ\)</span>: the same cloud around every <span class="math inline">\(x\)</span>, wherever the density is.</li>
+<li>Gibbs uses the target itself, and needs every full conditional.</li>
+<li>The slope of <span class="math inline">\(\log\pi\)</span> at <span class="math inline">\(x\)</span> says which way the density rises. It costs one derivative and needs no conditional.</li>
+<li>The Langevin proposal is built from it in three parts: a step along the slope, noise, and an accept step.</li>
+<li>Each part repairs what the one before lacks: the step alone stops at the mode, the noise leaves a bias, and the accept step removes it.</li>
+</ul>
+<p>where <span class="math inline">\(x\)</span>: the current state; <span class="math inline">\(Y\)</span>: the proposal; <span class="math inline">\(Z \sim \Normal(\mathbf{0}, \mathbf{I})\)</span>; <span class="math inline">\(s\)</span>: the standard deviation of the random-walk step; <span class="math inline">\(\pi\)</span>: the target.</p>
+<!-- NEW 2026 -->
+</section>
+<section id="the-random-walk-proposal-from-one-point" class="slide level2">
+<h2>The Random-Walk Proposal from One Point</h2>
+<p>Target: <span class="math inline">\(x = (x_1, x_2) \sim \Normal(\mathbf{0}, \boldsymbol\Sigma)\)</span>, <span class="math inline">\(\boldsymbol\Sigma = \bigl(\begin{smallmatrix}1 &amp; 0.9\\ 0.9 &amp; 1\end{smallmatrix}\bigr)\)</span>. Random-walk step: standard deviation <span class="math inline">\(s\)</span>.</p>
+<div class="w13" data-widget="langevin" data-cloud="1" data-gradient="0" data-eps="0.5" data-start="-1.2,0.2" data-legend="1" data-narrate="1" data-height="fill"></div>
+<ul>
+<li>From <span class="math inline">\((-1.2, 0.2)\)</span>, outside the 95% contour, about half of the cloud still lands where <span class="math inline">\(\pi\)</span> is lower.</li>
+</ul>
+</section>
+<section id="the-gradient-of-logpi" class="slide level2">
+<h2>The Gradient of <span class="math inline">\(\log\pi\)</span></h2>
+<p>Target: <span class="math inline">\(\Normal(\mathbf{0}, \boldsymbol\Sigma)\)</span>, unit variances, <span class="math inline">\(\rho = 0.9\)</span>. Its gradient <span class="math inline">\(\nabla\log\pi(x)\)</span> is the pair of slopes:</p>
+<p><span class="math display">\[\log\pi(x) = -\tfrac{x_1^2 - 2\rho x_1x_2 + x_2^2}{2(1 - \rho^2)} + \text{const}, \qquad \tfrac{\partial\log\pi}{\partial x_1} = -\tfrac{x_1 - \rho x_2}{1 - \rho^2}, \quad \tfrac{\partial\log\pi}{\partial x_2} = -\tfrac{x_2 - \rho x_1}{1 - \rho^2}\]</span></p>
+<div class="w13" data-widget="langevin" data-probe="1" data-legend="1" data-narrate="1" data-height="fill"></div>
+<!-- NEW 2026 -->
+</section>
+<section id="reading-the-gradient-field" class="slide level2">
+<h2>Reading the Gradient Field</h2>
+<ul>
+<li><span class="math inline">\(\nabla\log\pi(x) = (\partial\log\pi/\partial x_1, \ldots, \partial\log\pi/\partial x_d)\)</span>, here <span class="math inline">\(-\boldsymbol\Sigma^{-1}x\)</span>, points where <span class="math inline">\(\log\pi\)</span>, and so <span class="math inline">\(\pi\)</span>, rises fastest.</li>
+<li>Off the ridge, the long axis of the contours (the line <span class="math inline">\(x_1 = x_2\)</span>), the arrows point nearly straight across to it, the steepest way up; the mode lies along the ridge, in another direction.</li>
+<li>The target is long along the ridge, standard deviation <span class="math inline">\(\sqrt{1 + \rho} = 1.38\)</span>, and narrow across it, <span class="math inline">\(\sqrt{1 - \rho} = 0.32\)</span>.</li>
+<li>The slope is steep across the ridge and gentle along it: per unit of distance from the mode, the gradient grows by <span class="math inline">\(1/(1 - \rho) = 10\)</span> across and by <span class="math inline">\(1/(1 + \rho) \approx 0.53\)</span> along.</li>
+<li>A constant drops out, <span class="math inline">\(\nabla\log(c\,\tilde\pi) = \nabla\log\tilde\pi\)</span>: a posterior’s unknown constant is never needed.</li>
+</ul>
+<p>where <span class="math inline">\(\boldsymbol\Sigma\)</span>: unit variances, <span class="math inline">\(\rho = 0.9\)</span>; <span class="math inline">\(\tilde\pi\)</span>: the target without its constant <span class="math inline">\(c\)</span>.</p>
+<!-- NEW 2026 -->
+</section>
+<section id="euler-steps-along-the-gradient" class="slide level2">
+<h2>Euler Steps Along the Gradient</h2>
+<p>The first part of the proposal: from the current state, a step along the gradient.</p>
+<p><span class="math display">\[x_{t+1} = x_t + \tfrac{\epsilon^2}{2}\nabla\log\pi(x_t)\]</span></p>
+<ul>
+<li>Euler’s method follows a motion <span class="math inline">\(dz/dt = f(z)\)</span> by straight steps <span class="math inline">\(z \gets z + h\,f(z)\)</span>: here <span class="math inline">\(f = \nabla\log\pi\)</span>, <span class="math inline">\(h = \epsilon^2/2\)</span>.</li>
+<li>Bivariate normal, <span class="math inline">\(\rho = 0.9\)</span>, <span class="math inline">\(x_t = ({-}2.6,\ 1.2)\)</span>, <span class="math inline">\(\epsilon = 0.3\)</span>: <span class="math inline">\(\nabla\log\pi(x_t) = (19.37,\ {-}18.63)\)</span>, <span class="math inline">\(\tfrac{\epsilon^2}{2}\nabla\log\pi(x_t) = (0.87,\ {-}0.84)\)</span>, <span class="math inline">\(x_{t+1} = ({-}1.73,\ 0.36)\)</span>.</li>
+<li>The step has length <span class="math inline">\(\tfrac{\epsilon^2}{2}\lVert\nabla\log\pi(x_t)\rVert\)</span>. Here: <span class="math inline">\(0.045 \times 26.88 = 1.21\)</span>. On the ridge at <span class="math inline">\((1, 1)\)</span>: <span class="math inline">\(0.045 \times 0.74 = 0.033\)</span>.</li>
+<li>Doubling <span class="math inline">\(\epsilon\)</span> makes every step four times as long. The slope at the start is used for the whole step, so a large <span class="math inline">\(\epsilon\)</span> overshoots the ridge, and a larger one diverges.</li>
+</ul>
+<p>where <span class="math inline">\(x_t\)</span>: the state after <span class="math inline">\(t\)</span> steps; <span class="math inline">\(\epsilon\)</span>: the step size; <span class="math inline">\(\lVert\cdot\rVert\)</span>: the length of a vector; the ridge: the long axis of the contours, the line <span class="math inline">\(x_1 = x_2\)</span>; <span class="math inline">\(\gets\)</span>: replace by; <span class="math inline">\(z\)</span>, <span class="math inline">\(f\)</span>, <span class="math inline">\(h\)</span>: a state, its rate of change, a time step.</p>
+<!-- NEW 2026 -->
+</section>
+<section id="euler-steps-on-the-bivariate-normal" class="slide level2">
+<h2>Euler Steps on the Bivariate Normal</h2>
+<p>Target: <span class="math inline">\(\Normal(\mathbf{0}, \boldsymbol\Sigma)\)</span>, unit variances, correlation <span class="math inline">\(\rho = 0.9\)</span>. Start: <span class="math inline">\(({-}2.6,\ 1.2)\)</span>; step size <span class="math inline">\(\epsilon\)</span> on the slider.</p>
+<div class="w13" data-widget="langevin" data-gradient="1" data-noise="0" data-accept="0" data-switches="none" data-eps="0.3" data-start="-2.6,1.2" data-legend="1" data-narrate="1" data-height="fill"></div>
+</section>
+<section id="adding-noise-eulermaruyama" class="slide level2">
+<h2>Adding Noise: Euler–Maruyama</h2>
+<p>The second part: noise. The Euler path ends at the mode, one point and no sample from <span class="math inline">\(\pi\)</span>. <!-- NEW 2026 --></p>
+<p><span class="math display">\[x_{t+1} = x_t + \tfrac{\epsilon^2}{2}\nabla\log\pi(x_t) + \epsilon Z_t, \qquad Z_t \iid \Normal(\mathbf{0}, \mathbf{I})\]</span></p>
+<ul>
+<li>Euler–Maruyama: Euler’s method with Gaussian noise added at every step.</li>
+<li><span class="math inline">\(\epsilon Z_t\)</span>: a fresh normal step with standard deviation <span class="math inline">\(\epsilon\)</span> in each coordinate, independent of everything before it. <!-- NEW 2026 --></li>
+<li>The gradient term pulls the state toward higher density; the noise term pushes it off in a random direction. <!-- NEW 2026 --></li>
+<li>Small steps approach the Langevin diffusion, a continuous-time process with stationary distribution <span class="math inline">\(\pi\)</span>.</li>
+</ul>
+<p>where <span class="math inline">\(x_t\)</span>: the state after <span class="math inline">\(t\)</span> steps; <span class="math inline">\(\nabla\log\pi\)</span>: the gradient of <span class="math inline">\(\log\pi\)</span>; <span class="math inline">\(\epsilon\)</span>: the step size; <span class="math inline">\(Z_t\)</span>: the noise at step <span class="math inline">\(t\)</span>.</p>
+<!-- NEW 2026 -->
+</section>
+<section id="eulermaruyama-on-the-bivariate-normal" class="slide level2">
+<h2>Euler–Maruyama on the Bivariate Normal</h2>
+<p>Target: <span class="math inline">\(\Normal(\mathbf{0}, \boldsymbol\Sigma)\)</span>, unit variances, <span class="math inline">\(\rho = 0.9\)</span>. The switches turn the gradient and the noise on or off.</p>
+<div class="w13" data-widget="langevin" data-gradient="1" data-noise="1" data-accept="0" data-switches="gradient,noise" data-eps="0.5" data-start="-2.6,1.2" data-legend="1" data-narrate="1" data-height="fill"></div>
+<!-- NEW 2026 -->
+</section>
+<section id="what-the-switches-show" class="slide level2">
+<h2>What the Switches Show</h2>
+<ul>
+<li>Gradient alone: the path ends at the mode.</li>
+<li>Noise alone: a random walk with no accept step. After <span class="math inline">\(t\)</span> steps each coordinate has variance <span class="math inline">\(t\epsilon^2\)</span> around the start, and nothing brings the state back.</li>
+<li>Both: the states scatter around the mode and along the ridge, as <span class="math inline">\(\pi\)</span> does.</li>
+<li>Count the states inside the 95% contour: at <span class="math inline">\(\epsilon = 0.5\)</span>, 0.81 of them, where 0.95 belong. Too many fall outside.</li>
+</ul>
+<p>where <span class="math inline">\(t\)</span>: the number of steps; <span class="math inline">\(\epsilon\)</span>: the step size; the 95% contour: the ellipse that holds 95% of the target’s probability; the ridge: the long axis of the contours, the line <span class="math inline">\(x_1 = x_2\)</span>; the widget’s share inside the contour: counted after the first 50 steps.</p>
+<!-- NEW 2026 -->
+</section>
+<section id="the-balance-of-gradient-and-noise" class="slide level2">
+<h2>The Balance of Gradient and Noise</h2>
+<p>A step that keeps the target takes a draw from <span class="math inline">\(\pi\)</span> to a draw from <span class="math inline">\(\pi\)</span>. Check one step on <span class="math inline">\(\Normal(0, 1)\)</span>, where the slope is <span class="math inline">\(-x\)</span>:</p>
+<ul>
+<li><span class="math inline">\(X&#39; = X + \tfrac{\epsilon^2}{2}(-X) + \epsilon Z = \bigl(1 - \tfrac{\epsilon^2}{2}\bigr)X + \epsilon Z\)</span>, with <span class="math inline">\(X \sim \Normal(0, 1)\)</span>, the target, and <span class="math inline">\(Z\)</span> independent of <span class="math inline">\(X\)</span>. <span class="math display">\[\Var(X&#39;) = \underbrace{\bigl(1 - \tfrac{\epsilon^2}{2}\bigr)^2}_{\text{the gradient shrinks}} + \underbrace{\epsilon^2}_{\text{the noise adds}} = 1 - \epsilon^2 + \tfrac{\epsilon^4}{4} + \epsilon^2 = \boxed{1 + \tfrac{\epsilon^4}{4}}\]</span></li>
+<li>At <span class="math inline">\(\epsilon = 0.5\)</span>: <span class="math inline">\(\Var(X&#39;) = 0.766 + 0.250 = 1.016\)</span>, against the target’s 1. The step nearly keeps the target; the excess is <span class="math inline">\(\epsilon^4/4\)</span>.</li>
+<li>A gradient step of <span class="math inline">\(a\)</span> in place of <span class="math inline">\(\epsilon^2/2\)</span> gives <span class="math inline">\((1 - a)^2 + \epsilon^2 = 1 - 2a + \epsilon^2 + a^2\)</span>, and <span class="math inline">\(-2a + \epsilon^2 = 0\)</span> only when <span class="math inline">\(a = \epsilon^2/2\)</span>: the reason the gradient step is written <span class="math inline">\(\epsilon^2/2\)</span>.</li>
+</ul>
+<p>where <span class="math inline">\(X\)</span>, <span class="math inline">\(X&#39;\)</span>: the state before and after one step; <span class="math inline">\(Z \sim \Normal(0, 1)\)</span>: the noise; <span class="math inline">\(\epsilon\)</span>: the step size; <span class="math inline">\(a\)</span>: a size for the gradient step.</p>
+<!-- NEW 2026 -->
+</section>
+<section id="the-step-size-leaves-a-bias" class="slide level2">
+<h2>The Step Size Leaves a Bias</h2>
+<p>With no accept step, the chain settles on a distribution wider than the target.</p>
+<ul>
+<li>Recall one step on <span class="math inline">\(\Normal(0, 1)\)</span>, <span class="math inline">\(X_{t+1} = \bigl(1 - \tfrac{\epsilon^2}{2}\bigr)X_t + \epsilon Z_t\)</span>: from variance <span class="math inline">\(v\)</span> it gives variance <span class="math inline">\(\bigl(1 - \tfrac{\epsilon^2}{2}\bigr)^2 v + \epsilon^2\)</span>.</li>
+<li>The variance stops changing where the two agree, the stationary variance of this AR(1) chain (week 11): <span class="math display">\[v = \bigl(1 - \tfrac{\epsilon^2}{2}\bigr)^2 v + \epsilon^2 \quad\Longrightarrow\quad v = \frac{\epsilon^2}{1 - (1 - \epsilon^2/2)^2} = \frac{\epsilon^2}{\epsilon^2 - \epsilon^4/4} = \boxed{\frac{1}{1 - \epsilon^2/4}} &gt; 1\]</span></li>
+<li>The target’s variance is 1. The chain’s is 1.07 at <span class="math inline">\(\epsilon = 0.5\)</span> and <span class="math inline">\(4/3\)</span> at <span class="math inline">\(\epsilon = 1\)</span>: it samples <span class="math inline">\(\Normal(0, 4/3)\)</span> in place of <span class="math inline">\(\Normal(0, 1)\)</span>.</li>
+<li>On the bivariate normal at <span class="math inline">\(\epsilon = 0.5\)</span>: variance 2.67 times the target’s across the ridge and 1.03 times along it, which leaves 0.81 of the states inside the 95% contour.</li>
+<li>A smaller <span class="math inline">\(\epsilon\)</span> shrinks the bias, and each step then moves the chain less.</li>
+</ul>
+<p>where <span class="math inline">\(X_t\)</span>: the state after <span class="math inline">\(t\)</span> steps; <span class="math inline">\(Z_t \iid \Normal(0, 1)\)</span>; <span class="math inline">\(\epsilon\)</span>: the step size, <span class="math inline">\(0 &lt; \epsilon &lt; 2\)</span>; <span class="math inline">\(v\)</span>: the variance of the state; AR(1): <span class="math inline">\(X_{t+1} = \rho X_t + \sigma Z_t\)</span>, here with <span class="math inline">\(\rho = 1 - \epsilon^2/2\)</span>, <span class="math inline">\(\sigma = \epsilon\)</span>; the ridge: the long axis of the contours, the line <span class="math inline">\(x_1 = x_2\)</span>.</p>
+</section>
+<section id="the-langevin-proposal-with-the-hastings-correction" class="slide level2">
+<h2>The Langevin Proposal with the Hastings Correction</h2>
+<p><span class="math display">\[Y = x + \tfrac{\epsilon^2}{2}\nabla\log\pi(x) + \epsilon Z, \qquad Z \sim \Normal(\mathbf{0}, \mathbf{I})\]</span></p>
+<ul>
+<li>The third part, the accept step: use one Euler–Maruyama step as the proposal of Metropolis–Hastings. Its density is normal, centered at the gradient step from <span class="math inline">\(x\)</span>: <span class="math display">\[q(y \mid x) = \phi\bigl(y;\ x + \tfrac{\epsilon^2}{2}\nabla\log\pi(x),\ \epsilon^2\mathbf{I}\bigr)\]</span></li>
+<li>Asymmetric: the center depends on the gradient at the starting point, so <span class="math inline">\(q(y \mid x) \ne q(x \mid y)\)</span> in general, and the Hastings correction of week 12 is needed: <span class="math display">\[\alpha(x, y) = \min\Bigl(1,\ \frac{\pi(y)\,q(x \mid y)}{\pi(x)\,q(y \mid x)}\Bigr)\]</span></li>
+<li>With the correction, <span class="math inline">\(\pi\)</span> is stationary for every <span class="math inline">\(\epsilon\)</span>: the accept step removes the bias of the step size. This is MALA, the Metropolis-adjusted Langevin algorithm (Roberts and Tweedie, 1996).</li>
+</ul>
+<p>where <span class="math inline">\(x\)</span>: the current state; <span class="math inline">\(Y\)</span>, <span class="math inline">\(y\)</span>: the proposal; <span class="math inline">\(\epsilon\)</span>: the step size; <span class="math inline">\(Z\)</span>: the noise; <span class="math inline">\(\phi(y; \mathbf{m}, \mathbf{S})\)</span>: the normal density, mean <span class="math inline">\(\mathbf{m}\)</span>, covariance <span class="math inline">\(\mathbf{S}\)</span>; <span class="math inline">\(\alpha\)</span>: the acceptance probability.</p>
+<!-- NEW 2026 -->
+</section>
+<section id="the-langevin-proposal-from-one-point" class="slide level2">
+<h2>The Langevin Proposal from One Point</h2>
+<p>Target: <span class="math inline">\(\Normal(\mathbf{0}, \boldsymbol\Sigma)\)</span>, unit variances, correlation <span class="math inline">\(\rho = 0.9\)</span>. Switch off: the random walk with the same spread.</p>
+<div class="w13" data-widget="langevin" data-cloud="1" data-gradient="1" data-gradient-switch="1" data-eps="0.5" data-start="-1.2,0.2" data-legend="1" data-narrate="1" data-height="fill"></div>
+<ul>
+<li>From <span class="math inline">\(x = (-1.2, 0.2)\)</span> at <span class="math inline">\(\epsilon = 0.5\)</span>: 0.92 of the proposals land where <span class="math inline">\(\pi\)</span> is higher (random walk: about half).</li>
+</ul>
+<!-- NEW 2026 -->
+</section>
+<section id="what-the-gradient-does-to-the-proposal" class="slide level2">
+<h2>What the Gradient Does to the Proposal</h2>
+<ul>
+<li>The gradient moves the center of the cloud; the spread stays <span class="math inline">\(\epsilon\)</span> in every direction.</li>
+<li>Off the ridge the move is large: from <span class="math inline">\((-1.2, 0.2)\)</span> at <span class="math inline">\(\epsilon = 0.5\)</span> the center shifts by <span class="math inline">\((0.91,\ {-}0.84)\)</span>, toward the ridge.</li>
+<li>On the ridge it is small: from <span class="math inline">\((1, 1)\)</span> the center shifts by <span class="math inline">\(({-}0.07,\ {-}0.07)\)</span>, and the cloud is nearly the random walk’s.</li>
+<li>Too large a step throws the center across the ridge and out the other side.</li>
+<li>Landing where <span class="math inline">\(\pi\)</span> is higher is no goal in itself: in the long run a chain moves to lower density as often as to higher. The goal stays a large ESS.</li>
+</ul>
+<p>where <span class="math inline">\(\epsilon\)</span>: the step size; the ridge: the long axis of the contours, the line <span class="math inline">\(x_1 = x_2\)</span>; ESS: the effective sample size.</p>
+<!-- NEW 2026 -->
+</section>
+<section id="the-langevin-chain-on-the-bivariate-normal" class="slide level2">
+<h2>The Langevin Chain on the Bivariate Normal</h2>
+<p>Target: <span class="math inline">\(\Normal(\mathbf{0}, \boldsymbol\Sigma)\)</span>, unit variances, correlation <span class="math inline">\(\rho = 0.9\)</span>. The switches turn each part of the step on or off.</p>
+<div class="w13" data-widget="langevin" data-gradient="1" data-noise="1" data-accept="1" data-eps="0.5" data-start="-2.6,1.2" data-legend="1" data-narrate="1" data-height="fill"></div>
+<ul>
+<li>At <span class="math inline">\(\epsilon = 0.5\)</span>: 0.95 of the states inside the 95% contour (0.81 without the accept step); acceptance 0.71.</li>
+</ul>
+<!-- NEW 2026 -->
+</section>
+<section id="langevin-against-the-random-walk" class="slide level2 tight-table">
+<h2>Langevin Against the Random Walk</h2>
+<ul>
+<li><strong>The goal:</strong> a large ESS, as in week 12; the acceptance rate sits beside it as a diagnostic. Each sampler at the best of the settings tried, <span class="math inline">\(s\)</span> = 0.5, 1, 1.4 and <span class="math inline">\(\epsilon\)</span> = 0.3, 0.5, 0.6.</li>
+</ul>
+<table class="caption-top">
+<colgroup>
+<col style="width: 40%">
+<col style="width: 18%">
+<col style="width: 20%">
+<col style="width: 22%">
+</colgroup>
+<thead>
+<tr class="header">
+<th style="text-align: left;">Bivariate normal, <span class="math inline">\(\rho = 0.9\)</span></th>
+<th style="text-align: center;">Setting</th>
+<th style="text-align: center;">Acceptance rate</th>
+<th style="text-align: center;"><span class="math inline">\(\text{ESS}/N\)</span> of <span class="math inline">\(x_1\)</span></th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: left;">random walk</td>
+<td style="text-align: center;"><span class="math inline">\(s = 1.4\)</span></td>
+<td style="text-align: center;">0.22</td>
+<td style="text-align: center;">0.042</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Langevin proposal, Hastings correction</td>
+<td style="text-align: center;"><span class="math inline">\(\epsilon = 0.6\)</span></td>
+<td style="text-align: center;">0.55</td>
+<td style="text-align: center;">0.029</td>
+</tr>
+</tbody>
+</table>
+<ul>
+<li>The Langevin proposal accepts more often and still has the smaller ESS on this target.</li>
+<li>Along the ridge the gradient is small: each step there is a random walk of size <span class="math inline">\(\epsilon\)</span>.</li>
+<li>The narrow direction across the ridge limits <span class="math inline">\(\epsilon\)</span>: past 0.6 the steps overshoot and are rejected more often (acceptance 0.21 at <span class="math inline">\(\epsilon = 0.9\)</span>), and <span class="math inline">\(\text{ESS}/N\)</span> never passes 0.030 for <span class="math inline">\(\epsilon\)</span> up to 0.9.</li>
+</ul>
+<p>where <span class="math inline">\(s\)</span>: the standard deviation of the random-walk step, the same in both coordinates; <span class="math inline">\(\epsilon\)</span>: the Langevin step size; the ridge: the long axis of the contours, the line <span class="math inline">\(x_1 = x_2\)</span>; ESS: the effective sample size; <span class="math inline">\(N\)</span>: the number of iterations, one evaluation of the target each for both samplers.</p>
+<!-- NEW 2026 -->
+</section>
+<section id="distance-covered-in-l-steps" class="slide level2">
+<h2>Distance Covered in <span class="math inline">\(L\)</span> Steps</h2>
+<div class="columns">
+<div class="column" style="width:58%;">
+<div class="cell">
+<div class="cell-output-display">
+<div>
+<figure>
+<p><img role="img" data-src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAABUYAAAJ2CAYAAACTnFhCAAAgAElEQVR4nOzdeVyU1f4H8M+wI7IoKoIgKiC4i6m5W2pqlmtqalZaWlZmXSvTm3X1lmVeSTO92i8rvamlaSauqanlnvuCoAiIgCD7Ouxzfn8gE+M8w8wwK/B5v168gGee5cx5znPOM985zzkyIYQAERERERERERERUT1iY+kEEBEREREREREREZkbA6NERERERERERERU7zAwSkRERERERERERPUOA6NERERERERERERU7zAwSkRERERERERERPUOA6NERERERERERERU7zAwSkRERERERERERPUOA6NERERERERERERU7zAwSkRERERERERERPUOA6NERERERERERERU7zAwSkRERERERERERPUOA6NERERERERERERU7zAwSkRERERERERERPUOA6NERERERERERERU7zAwSkRERERERERERPWOnaUTQEREdV9kZCT279+PuLg4JCQk4O7duxBCIDg4GF26dMFrr70GDw8PSyeTrFR8fDySk5ORn5+v8lNQUKD8+7333kOzZs3qVVrI9KKjo5GWlqZyfh8+559++ikcHBwsnVSjYF1NplDfriMiIqpdZEIIYelEEBFR3RQeHo7Fixfj4sWLKssdHR1RXl6OsrIyAICnpye++eYbjB071hLJJCs3YcIEbN++vdp1oqKiEBwcXK/SQqbXv39/nDhxotp18vPz4eLiYqYUmQbrajKl+nIdERFR7cRH6clikpOTsXv3bnz66ad45513MHPmTMydOxcff/wxfvjhB9y6dQuGxu3Pnj2Lf//734iKitJ7W4VCgZMnT2L+/Pm4ceOGQekgqm+Kioowbdo0jB49WvlB297eHq+99hpu3LiBwsJCvPzyy8r1MzIy8PzzzyMyMtJSSSYiqndYVxMREVF9xx6jZFbl5eXYuHEjvvvuO5w8eVLr+s2bN8cLL7yAmTNnIjAwUO/jvf7661i7di0AICAgAI8//jhCQ0PRvn17eHt7w83NDc7OzsjJyUFaWhrS0tJw+/ZtnD17FkeOHEFycjIAYN26dXj11Vf1Pn5tsHnzZhw+fBitWrXCv/71L0snh+qIyZMn46efflL+L5PJsHv3bjz11FMAgJs3byIkJERtu7lz5yIsLMxs6aTa4e7du8jIyEB6ejqWLVuG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KjEwSkRERERG4+joiA0bNsDW1la57LPPPsOSJUtQVlam175iY2MxaNAgxMXFKZeFhobinXfeMVp6iYiIiKj+4qz0RFQrJCUlYfbs2cr/T506hdTUVJV1bG1tMXLkSOX/s2bNwrBhw8yWRiJ9rFmzBocPHwYA5Obm4siRI2rrhISEICQkBADg4uKCTZs2mTWNRIY4fPgwpkyZgrS0NOWywMBAzJgxAyNGjEBISAjs7e3VtsvIyMDZs2fx888/Y8uWLSgpKVG+NmLECGzYsAFNmzY1y3sgIiIiorqNgVEiqhVu3rypDBDpat26dXj11VdNlCIiw8ycORPr16/XeX0PDw9OOEO1Tl5eHlasWIH169cjISFB5TV7e3u0aNECbm5ucHBwQH5+PjIzM9W+9JLJZOjfvz/eeecdjBo1ypzJJyIiIqI6zs7SCSAi0oWrqyueffZZODo6wsHBQfnbwcEBNjY2KCkpQXFxscrvNm3aWDrZRBp1794dcrlcrUzb29ujvLxcrUxL9awjsnaurq746KOP8NFHH+HChQs4evQoIiIicOPGDaSkpCAnJwdJSUkoLS2Fk5MTXFxcEBgYiICAALRt2xY9e/bEE088oTZmKRERERGRMbDHKBERERFZlBACMpnM0skgIiIionqGky8RERERkUUxKEpERERElsDAKBEREREREREREdU7DIwSERERERERERFRvcPAKBEREREREREREdU7DIwSERERERERERFRvcPAKBEREREREREREdU7DIwSERERERERERFRvcPAKBEREREREREREdU7DIwSERERERERERFRvcPAKBEREREREREREdU7DIwSERERERERERFRvcPAKBEREREREREREdU7DIwSERERERERERFRvcPAKBEREREREREREdU7DIwSERERERERERFRvWNn6QSQdTtw4AAWLlxo6WQQEREREREREZGOwsPD4ePjY+lkWD32GCUiIiIiIiIiIqJ6hz1GSavz589bOgn1Wnp6OgCgSZMmFk4J1Xcsi2QtWBbJWqSnp7McklVgWSRrwPaZrAXLItC9e3dLJ6HWYI9RIiIiIiIiIiIiqncYGCUiIiIiIiIiIqJ6h4FRIiIiIiIiIiIiqncYGCUiIiIiIiIiIqJ6h4FRIiIiIiIiIiIiqncYGCUiIiIiIiIiIqJ6h4FRIiIiIiIiIiIi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7lJRUZG2bdumu+66y4KVAgAA1D/8GRYAAACwko8//liSFBUVVa1QVJJ+//vfq0+fPpKkH374wey1AQAA1HcEowAAAICVpKamSpLp1PLqatmypaQblwcAAABA9RCMAgAAoEIlr7zEVZjM684775Qkbdiwodrr5uTkaPv27ZJkOnIUAAAAVUcwCgAAgAplZWWZlrOzs61YSf0zefJk+fn5afny5Zo5c2aV17t27ZoeeughpaWladiwYerXr5/ligQAAKinXKZOnTrV2kUAAADAtsTFxenYsWP6z3/+o/nz55tO1U5OTlazZs104cIFOTs7q3Hjxlau1L55eXlpyJAh+uGHH7RkyRIdO3ZM7dq1k6+vb5njCwsL9c033ygqKkq7du3SE088oc8++0wuLi51XDkAAID94670AAAAuElQUJCOHj0qFxcXubm5yc3NTYWFhbp+/bry8vJkGIamTp2qN954w9ql1guFhYXasGGDFi9erO+++0633367unbtqrZt28rHx0dnzpzRyZMntXv3buXl5WnEiBEaM2aMwsLCrF06AACA3SIYBQAAwE1yc3PVoEGDco9ELD6CtEGDBnVZlkPIyMjQ4cOHderUKZ06dUoXL15Uq1at1Lp1a/n5+al79+7sdwAAADMgGAUAAAAAAADgcLj5EgAAAAAAAACHQzAKAAAAAAAAwOEQjAIAAAAAAABwOASjAAAAAAAAABwOwSgAAAAAAAAAh0MwCgAAAAAAAMDhEIwCAAAAAAAAcDgEowAAAAAAAAAcDsEoAAAAAAAAAIdDMAoAAAAAAADA4RCMAgAAAAAAAHA4BKMAAAAAAAAAHA7BKAAAAAAAAACHQzAKAAAAAAAAwOEQjAIAAAAAAABwOP8Po/17Kd/cpPcAAAAASUVORK5CYII=" style="width:100.0%"></p>
+</figure>
+</div>
+</div>
+</div>
+</div><div class="column" style="width:42%;">
+<ul>
+<li>Blue: a fresh direction at every step, as the Langevin chain moves along the ridge. The steps partly cancel: after <span class="math inline">\(L\)</span> steps the end is about <span class="math inline">\(\sqrt L\)</span> step lengths away, here 5.</li>
+<li>Orange: one direction kept. The steps add up: <span class="math inline">\(L\)</span> step lengths, here 25.</li>
+<li>The 95% contour is 11.2 steps of size <span class="math inline">\(\epsilon = 0.6\)</span> long: about <span class="math inline">\(11.2^2 \approx 126\)</span> steps in fresh directions to cover it, 11 with the direction kept.</li>
+</ul>
+</div></div>
+<div class="fragment">
+<p><strong>The need:</strong> a move that keeps its direction for many steps.</p>
+<p>where <span class="math inline">\(L\)</span>: the number of steps; dashed circle: radius <span class="math inline">\(\sqrt L\)</span>, the root mean square distance over many such paths (this one ends 6.6 away).</p>
+<!-- NEW 2026 -->
+</div>
 </section>
 <section id="notation" class="slide level2">
 <h2>Notation</h2>
+<div class="columns">
+<div class="column" style="width:50%;">
 <table class="caption-top">
 <colgroup>
 <col style="width: 40%">
@@ -1627,6 +1854,50 @@ color: #8a8577;
 </tr>
 </tbody>
 </table>
+</div><div class="column" style="width:50%;">
+<table class="caption-top">
+<colgroup>
+<col style="width: 40%">
+<col style="width: 60%">
+</colgroup>
+<thead>
+<tr class="header">
+<th style="text-align: left;">Symbol</th>
+<th style="text-align: left;">Meaning</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: left;"><span class="math inline">\(\nabla\log\pi(x)\)</span></td>
+<td style="text-align: left;">gradient of <span class="math inline">\(\log\pi\)</span></td>
+</tr>
+<tr class="even">
+<td style="text-align: left;"><span class="math inline">\(\lVert\cdot\rVert\)</span></td>
+<td style="text-align: left;">length of a vector</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;"><span class="math inline">\(\epsilon\)</span>, <span class="math inline">\(Z_t\)</span></td>
+<td style="text-align: left;">step size, <span class="math inline">\(\Normal(\mathbf{0}, \mathbf{I})\)</span> noise</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;"><span class="math inline">\(s\)</span></td>
+<td style="text-align: left;">standard deviation of a random-walk step</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;"><span class="math inline">\(q(y \mid x)\)</span></td>
+<td style="text-align: left;">proposal density from <span class="math inline">\(x\)</span> to <span class="math inline">\(y\)</span></td>
+</tr>
+<tr class="even">
+<td style="text-align: left;"><span class="math inline">\(\alpha(x, y)\)</span></td>
+<td style="text-align: left;">acceptance probability</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;"><span class="math inline">\(u\)</span>, <span class="math inline">\(w\)</span></td>
+<td style="text-align: left;"><span class="math inline">\((x_1 + x_2)/\sqrt2\)</span>, <span class="math inline">\((x_1 - x_2)/\sqrt2\)</span>: along, across the ridge</td>
+</tr>
+</tbody>
+</table>
+</div></div>
 <!-- NEW 2026 -->
 </section>
 <section id="punchlines" class="slide level2">
@@ -1634,6 +1905,8 @@ color: #8a8577;
 <ul>
 <li>Gibbs draws each coordinate from its full conditional: Metropolis–Hastings with acceptance 1, no tuning.</li>
 <li>Gibbs moves along the axes: on the bivariate normal, <span class="math inline">\(\text{ESS}/N = (1 - \rho^2)/(1 + \rho^2)\)</span>, 0.105 at <span class="math inline">\(\rho = 0.9\)</span>.</li>
+<li>The gradient of <span class="math inline">\(\log\pi\)</span> gives the direction. A step of size <span class="math inline">\(\epsilon\)</span> leaves a bias, <span class="math inline">\(1/(1 - \epsilon^2/4)\)</span> in the variance on <span class="math inline">\(\Normal(0, 1)\)</span>, and the Hastings step removes it.</li>
+<li>Along the ridge the Langevin chain is still a random walk of step <span class="math inline">\(\epsilon\)</span>: on the bivariate normal its <span class="math inline">\(\text{ESS}/N\)</span> is 0.029, against 0.042 for the best random walk.</li>
 </ul>
 <script>/* W13: numerical core, drawing helpers, and lifecycle for the week 13 widgets (STAT 536).
  *
@@ -2273,6 +2546,11 @@ color: #8a8577;
     W13.drawEllipse(ctx, fr, rho, W13.Q50, { color: W13.col.dark, width: 2, alpha: 0.85 });
     W13.drawEllipse(ctx, fr, rho, W13.Q95, { color: W13.col.dark, width: 2, alpha: 0.85 });
   };
+  // A light band under each contour, so the ellipses stay legible over a dense cloud of states.
+  W13.drawContourHalo = function (ctx, fr, rho) {
+    W13.drawEllipse(ctx, fr, rho, W13.Q50, { color: W13.col.panel, width: 5, alpha: 0.8 });
+    W13.drawEllipse(ctx, fr, rho, W13.Q95, { color: W13.col.panel, width: 5, alpha: 0.8 });
+  };
 
   W13.drawPath = function (ctx, fr, pts, o) {
     if (pts.length < 2) return;
@@ -2296,6 +2574,51 @@ color: #8a8577;
     if (o.fill) { ctx.fillStyle = o.fill; ctx.fill(); }
     if (o.stroke) { ctx.strokeStyle = o.stroke; ctx.lineWidth = o.lw || 2; ctx.setLineDash([]); ctx.stroke(); }
   };
+  W13.drawSquare = function (ctx, fr, p, o) {
+    const s = o.size || 6;
+    ctx.beginPath(); ctx.rect(fr.px(p[0]) - s, fr.py(p[1]) - s, 2 * s, 2 * s);
+    ctx.strokeStyle = o.stroke || W13.col.dark; ctx.lineWidth = o.lw || 2; ctx.setLineDash([]); ctx.stroke();
+  };
+
+  // The whole run of a chain on an offscreen canvas: every move as a thin faint segment (lines) and every state as a
+  // small faint dot (dots), both append-only arrays of points. Each frame draws only what was added since the last one
+  // and copies the layer; it is redrawn from scratch when an array is replaced (a reset) or the plot's backing store or
+  // frame changes. Each mark is filled on its own, so overlaps darken: dense regions read as density.
+  // chosen by eye at 600 Gibbs sweeps and 1500 Langevin steps: dots that read apart from the lines, lines that show the
+  // excursions without filling the cloud
+  W13.TRAIL_LINE = { color: W13.col.blue, width: 1, alpha: 0.12 };
+  W13.TRAIL_DOT = { color: W13.col.blue, r: 2.5, alpha: 0.45 };
+  W13.START_MARK = { size: 6, stroke: W13.col.dark, lw: 2.2 };
+  W13.TrailLayer = function () { this.el = null; this.key = ''; this.lines = null; this.dots = null; this.nl = 0; this.nd = 0; this.lastMs = 0; };
+  W13.TrailLayer.prototype.draw = function (ctx, canvas, fr, lines, dots) {
+    const t0 = typeof performance !== 'undefined' ? performance.now() : 0;
+    if (!this.el) this.el = document.createElement('canvas');
+    const L = this.el, r = canvas.ratio || 1;
+    const key = [canvas.w, canvas.h, r, fr.left, fr.top, fr.width, fr.height, fr.xlim, fr.ylim].join();
+    lines = lines || []; dots = dots || [];
+    if (key !== this.key || lines !== this.lines || dots !== this.dots || lines.length < this.nl || dots.length < this.nd) {
+      L.width = Math.round(canvas.w * r); L.height = Math.round(canvas.h * r);
+      this.key = key; this.lines = lines; this.dots = dots; this.nl = 0; this.nd = 0;
+    }
+    if (lines.length > Math.max(1, this.nl) || dots.length > this.nd) {
+      const c = L.getContext('2d'), TL = W13.TRAIL_LINE, TD = W13.TRAIL_DOT;
+      c.setTransform(r, 0, 0, r, 0, 0);
+      c.save(); c.beginPath(); c.rect(fr.left, fr.top, fr.width, fr.height); c.clip();
+      c.lineCap = 'round'; c.strokeStyle = TL.color; c.lineWidth = TL.width; c.globalAlpha = TL.alpha;
+      for (let k = Math.max(1, this.nl); k < lines.length; k++) {
+        c.beginPath(); c.moveTo(fr.px(lines[k - 1][0]), fr.py(lines[k - 1][1])); c.lineTo(fr.px(lines[k][0]), fr.py(lines[k][1])); c.stroke();
+      }
+      c.fillStyle = TD.color; c.globalAlpha = TD.alpha;
+      for (let k = this.nd; k < dots.length; k++) {
+        c.beginPath(); c.arc(fr.px(dots[k][0]), fr.py(dots[k][1]), TD.r, 0, 2 * Math.PI); c.fill();
+      }
+      c.restore();
+      this.nl = lines.length; this.nd = dots.length;
+    }
+    ctx.drawImage(L, 0, 0, canvas.w, canvas.h);
+    if (t0) this.lastMs = performance.now() - t0;
+  };
+
   W13.drawCross = function (ctx, fr, p, o) {
     const x = fr.px(p[0]), y = fr.py(p[1]), s = o.size || 9;
     ctx.beginPath();
@@ -2406,8 +2729,9 @@ color: #8a8577;
     wrap.style.width = w + 'px'; wrap.style.height = h + 'px';
     this.cv = host.canvas(wrap, w, h);
     this.o = o;
-    this.fr = W13.frame(66, 8, w - 66 - 12, h - 8 - 36, [0, o.window], o.ylim);
-    host.label(wrap, o.name, 20, 8 + (h - 44) / 2);
+    const L = o.left === undefined ? 66 : o.left;   // a wider axis name needs a wider left margin
+    this.fr = W13.frame(L, 8, w - L - 12, h - 8 - 36, [0, o.window], o.ylim);
+    host.label(wrap, o.name, o.nameX === undefined ? 20 : o.nameX, 8 + (h - 44) / 2);
   };
   // vals at x positions total - n + 1, ..., total, or at xs when given (a chain whose iterations cost several units)
   W13.drawSeries = function (ctx, fr, vals, xs, total, color) {
@@ -2422,18 +2746,51 @@ color: #8a8577;
     }
     ctx.strokeStyle = color || W13.col.blue; ctx.lineWidth = 2; ctx.setLineDash([]); ctx.stroke();
   };
-  W13.Trace.prototype.draw = function (vals, total, color, xs) {
+  // The whole run, at x = total - n + 1, ..., total: past two values per pixel column, each column is drawn as the
+  // span of its values (first, min, max, last), so 20,000 values cost about as much as the frame is wide.
+  W13.drawSeriesWhole = function (ctx, fr, vals, total, color) {
+    const n = vals.length;
+    if (n < 2) return;
+    if (n <= 2 * fr.width) { W13.drawSeries(ctx, fr, vals, null, total, color); return; }
+    const lo = fr.ylim[0] - 1, hi = fr.ylim[1] + 1, x0 = total - n + 1;
+    let col = null, f = 0, mn = 0, mx = 0, l = 0, started = false;
+    ctx.beginPath();
+    const emit = function () {
+      const px = col + 0.5;
+      if (started) ctx.lineTo(px, fr.py(f)); else { ctx.moveTo(px, fr.py(f)); started = true; }
+      ctx.lineTo(px, fr.py(mn)); ctx.lineTo(px, fr.py(mx)); ctx.lineTo(px, fr.py(l));
+    };
+    for (let k = 0; k < n; k++) {
+      const v = Math.max(lo, Math.min(hi, vals[k])), c = Math.floor(fr.px(x0 + k));
+      if (c !== col) { if (col !== null) emit(); col = c; f = mn = mx = l = v; }
+      else { if (v < mn) mn = v; if (v > mx) mx = v; l = v; }
+    }
+    emit();
+    ctx.strokeStyle = color || W13.col.blue; ctx.lineWidth = 2; ctx.setLineDash([]); ctx.stroke();
+  };
+  // under: optional further series [{vals, color}] on the same steps, drawn beneath the main one.
+  // o.whole: the axis runs from 0 to max(window, total), so the trace compresses as the run grows instead of scrolling.
+  W13.Trace.prototype.draw = function (vals, total, color, xs, under) {
     const ctx = this.cv.begin(), fr = this.fr, o = this.o;
-    const x1 = Math.max(o.window, total), x0 = x1 - o.window;
+    const x1 = Math.max(o.window, total), x0 = o.whole ? 0 : x1 - o.window;
     fr.xlim = [x0, x1];
     W13.fillPanel(ctx, fr);
     W13.clip(ctx, fr);
     ctx.strokeStyle = W13.col.frame; ctx.lineWidth = 1; ctx.globalAlpha = 0.5;
     ctx.beginPath(); ctx.moveTo(fr.left, fr.py(0)); ctx.lineTo(fr.left + fr.width, fr.py(0)); ctx.stroke();
     ctx.globalAlpha = 1;
-    W13.drawSeries(ctx, fr, vals, xs, total, color);
+    const series = function (v, c) { if (o.whole) W13.drawSeriesWhole(ctx, fr, v, total, c); else W13.drawSeries(ctx, fr, v, xs, total, c); };
+    (under || []).forEach(function (s) { series(s.vals, s.color); });
+    series(vals, color);
     ctx.restore();
-    const step = o.xstep || (o.window <= 300 ? 100 : 200), ticks = [];
+    let step = o.xstep || (o.window <= 300 ? 100 : 200);
+    const ticks = [];
+    if (o.whole) {
+      // as many ticks as the starting width shows, or one more
+      const most = o.window / step + 1;
+      const mult = [1, 2, 5, 10, 20, 50, 100, 200, 500, 1000];
+      for (let q = 0; q < mult.length; q++) if (x1 / (step * mult[q]) <= most + 1e-9) { step *= mult[q]; break; }
+    }
     for (let t = Math.ceil(x0 / step) * step; t <= x1; t += step) ticks.push(t);
     ctx.font = W13.font(22);
     const xnW = ctx.measureText(o.xname).width;
@@ -2507,8 +2864,34 @@ color: #8a8577;
         W13.drawArrow(ctx, fr, [3, 20], [41, 4], { color: C.green, width: 5, head: 16 });
         break;
       case 'trace':
+      case 'trace-dark':
         W13.drawPath(ctx, fr, [[2, 13], [7, 7], [11, 15], [16, 9], [21, 18], [26, 6], [31, 14], [36, 10], [42, 16]],
-          { color: C.blue, width: 2 });
+          { color: kind === 'trace' ? C.blue : C.dark, width: 2 });
+        break;
+      case 'trail-staircase': {
+        // the path so far: an older stretch thin and faint, the recent one as on the plot
+        const TL = W13.TRAIL_LINE;
+        W13.drawPath(ctx, fr, [[3, 21], [12, 21], [12, 15]], { color: TL.color, width: TL.width, alpha: TL.alpha * 2.5 });
+        W13.drawPath(ctx, fr, [[12, 15], [24, 15], [24, 9], [33, 9], [33, 4], [42, 4]], { color: C.blue, width: 2, alpha: 0.6 });
+        break;
+      }
+      case 'trail-path': {
+        const TL = W13.TRAIL_LINE;
+        W13.drawPath(ctx, fr, [[3, 20], [10, 13], [16, 18]], { color: TL.color, width: TL.width, alpha: TL.alpha * 2.5 });
+        W13.drawPath(ctx, fr, [[16, 18], [27, 9], [41, 14]], { color: C.blue, width: 2, alpha: 0.55 });
+        W13.drawDots(ctx, fr, [[16, 18], [27, 9], [41, 14]], { color: C.blue, r: 3, alpha: 0.7 });
+        break;
+      }
+      case 'faintdots': {
+        const TD = W13.TRAIL_DOT;
+        [[8, 15], [14, 9], [17, 17], [22, 12], [25, 6], [28, 15], [33, 10], [37, 17], [21, 19], [30, 4]].forEach(function (p) {
+          ctx.beginPath(); ctx.arc(p[0], p[1], TD.r, 0, 2 * Math.PI); ctx.fillStyle = TD.color; ctx.globalAlpha = TD.alpha * 2; ctx.fill();
+        });
+        ctx.globalAlpha = 1;
+        break;
+      }
+      case 'start':
+        W13.drawSquare(ctx, fr, [22, 12], W13.START_MARK);
         break;
       case 'dragline':
         W13.drawPath(ctx, fr, [[1, 12], [43, 12]], W13.SLICE_LINE);
@@ -2976,16 +3359,21 @@ color: #8a8577;
   // the width, can hold the long ones on as few lines as possible.
   const LEGEND = [
     { key: 'contours', kind: 'contours', label: '50% and 95% contours of the target', col: 2 },
-    { key: 'chain', kind: 'staircase', label: 'the chain so far', col: 1 },
-    { key: 'sweeps', kind: 'sweepdots', label: 'state after each sweep', col: 1 },
+    { key: 'chain', kind: 'trail-staircase', label: 'the path so far, the last 150 sweeps darker', col: 2 },
+    { key: 'sweeps', kind: 'faintdots', label: 'the state after each sweep, all so far', col: 2 },
+    { key: 'start', kind: 'start', label: 'the start', col: 1 },
     { key: 'state', kind: 'state', label: 'current state', col: 1 },
     { key: 'before', kind: 'before', label: 'state before this update', col: 1 },
     { key: 'line', kind: 'line', label: 'line of the update: the other coordinate held fixed', col: 2 },
     { key: 'conditional', kind: 'conditional', label: 'full conditional density along that line', col: 2 },
-    { key: 'drawn', kind: 'tick', label: 'the value drawn', col: 1 },
-    { key: 'trace', kind: 'trace', label: 'trace: $x_1$ after each sweep', col: 2 }
+    // five and five; the trace entry, whose subscript reaches below its line, is not the last of a column
+    { key: 'trace', kind: 'trace', label: 'trace: $x_1$ after each sweep', col: 1 },
+    { key: 'drawn', kind: 'tick', label: 'the value drawn', col: 1 }
   ];
-  const TRACE = { ylim: [-3.5, 3.5], yticks: [-3, 0, 3], name: '$x_1$', xname: 'sweep', window: 300 };
+  const TRACE = { ylim: [-3.5, 3.5], yticks: [-3, 0, 3], name: '$x_1$', xname: 'sweep', window: 300, whole: true };
+  // Nothing the room has seen vanishes during a run: every update and every sweep's state since the reset is kept (the
+  // first MAX of them), drawn faint on a layer under the contours; the last 150 sweeps are drawn as before on top.
+  const MAX = 20000;
 
   // ---------------------------------------------------------------- slice mode (data-slice="1")
   // No chain: the line of the held coordinate (data-hold, data-at), the full conditional of the free coordinate drawn on
@@ -3170,23 +3558,25 @@ color: #8a8577;
     if (host.bool('slice', false)) return slice(host);
     const hasSlider = host.bool('rhoSlider', false), start = host.pair('start', [-2.2, 1.8]);
     let rho = Math.max(0, Math.min(0.99, host.num('rho', 0.9)));
-    let target, run = 0, rng, x, j, updates, sweeps, segs, dots, trace, acf, inside, last, showCond;
+    let target, run = 0, rng, x, j, updates, sweeps, segs, allPts, dots, trace, acf, inside, last, showCond;
+    const layer = new W.TrailLayer();
 
     function reset() {
       target = W.bvn(rho);
       rng = host.rng(run);
       x = start.slice(); j = 0; updates = 0; sweeps = 0;
-      segs = [x]; dots = []; trace = []; acf = new W.RunningAcf1(); inside = 0; last = null; showCond = false;
+      segs = [x]; allPts = [x]; dots = []; trace = []; acf = new W.RunningAcf1(); inside = 0; last = null; showCond = false;
     }
     function update() {
       const r = W.gibbsUpdate(target, x, j, rng);
       last = { j: j, from: x, to: r.x, mean: r.mean, sd: r.sd };
       x = r.x; updates++;
       W.pushCap(segs, x, 301);
+      if (allPts.length <= MAX) allPts.push(x);
       if (j === 1) {
         sweeps++;
-        W.pushCap(dots, x, 150);
-        W.pushCap(trace, x[0], 300);
+        if (dots.length < MAX) dots.push(x);
+        W.pushCap(trace, x[0], MAX);
         acf.push(x[0]);
         if (target.inside95(x)) inside++;
       }
@@ -3337,9 +3727,13 @@ color: #8a8577;
         ctx.fillStyle = C.dark; ctx.globalAlpha = 0.12; ctx.fill(); ctx.globalAlpha = 1;
         W.drawPath(ctx, fr, cond.line, { color: C.dark, width: 1.5, alpha: 0.45, dash: [6, 7] });
       }
+      ctx.restore();
+      layer.draw(ctx, plot.cv, fr, allPts, dots);
+      W.clip(ctx, fr);
+      W.drawContourHalo(ctx, fr, rho);
       W.drawContours(ctx, fr, rho);
       W.drawPath(ctx, fr, segs, { color: C.blue, width: 2, alpha: 0.6 });
-      W.drawDots(ctx, fr, dots, { color: C.blue, r: 3.5, alpha: 0.8 });
+      W.drawSquare(ctx, fr, start, W.START_MARK);
       if (cond) {
         W.drawPath(ctx, fr, cond.curve, { color: C.dark, width: 2.2 });
         W.drawPath(ctx, fr, cond.tick, { color: C.orange, width: 3.5 });
@@ -3370,7 +3764,571 @@ color: #8a8577;
                          drawn: last.to[last.j], from: last.from.slice() } : null,
           legend: legend ? legend.keys.slice() : null,
           narration: narr ? narr.src : null, narrationShown: narr ? narr.front.dataset.src || null : null,
-          layout: layout, H: host.H, plotW: plot.width, plotInner: plot.inner, traceW: tr.cv.w, traceH: tr.cv.h
+          layout: layout, H: host.H, plotW: plot.width, plotInner: plot.inner, traceW: tr.cv.w, traceH: tr.cv.h,
+          start: start.slice(), statesN: dots.length, movesN: allPts.length - 1, recentN: segs.length - 1, traceN: trace.length,
+          traceXlim: tr.fr.xlim.slice(), layerMs: layer.lastMs
+        };
+      }
+    };
+  });
+})();
+</script>
+<script>/* W13 widget "langevin": y = x + G (eps^2/2) grad log pi(x) + N eps Z on the bivariate normal, rho = 0.9,
+ * with an optional Metropolis-Hastings accept step for that proposal.
+ * data-gradient, data-noise, data-accept ("0"/"1"), data-eps (0.05 to 0.9), data-start ("x1,x2").
+ * data-probe="1": no stepping; the gradient field, and the gradient at a clicked or dragged point with its components.
+ * data-legend="1": a legend of every mark the current switches can draw; data-narrate="1": a line saying what each
+ * Step did, with its numbers. Either one makes the default height 540 (500 in probe mode; data-height may go to 560).
+ * data-height="fill": the height the slide leaves free, 540 (500) to 720; the plot grows with it. The legend stays in
+ * a column beside the trace: stacked under the readouts it would need a height of about 790.
+ * data-switches="gradient,noise,accept" (any subset, or "none"; absent means all three): the switches shown. An unlisted
+ * switch keeps its data-* value. The readouts follow: acceptance rate only if the accept step can act, the share inside
+ * the 95% contour only if noise can be on, and with neither the distance from the mode.
+ * In probe mode with a legend, narration, or fill, a fourth readout gives the length of the gradient.
+ * data-cloud="1": no chain. data-n (300) proposals from the point x (data-start, dragged), y = c + eps Z with c = x, or
+ * c = x + (eps^2/2) grad log pi(x) with the gradient on (data-gradient, default 0; data-gradient-switch="1" shows the
+ * switch). data-eps is the proposal SD, slider 0.05 to 1.5, labelled s when the gradient is off with no switch. Each
+ * proposal is marked accepted or rejected by U_i < alpha_i; "New cloud" draws new Z and U (the next run). The shares
+ * "uphill" and "accepted" are over 100,000 draws of the same run, of which the first data-n are the ones plotted. */
+(function () {
+  'use strict';
+  const W = window.W13;
+  if (!W) return;
+  const C = W.col, D = [-3.5, 3.5], NARR_H = 84, LEG_W = 440, BODY_MIN = 526;
+  const LEGEND = [
+    { key: 'contours', kind: 'contours', label: '50% and 95% contours of the target' },
+    { key: 'field', kind: 'field', label: 'direction of the gradient, lengths compressed' },
+    { key: 'dots', kind: 'faintdots', label: 'the state after each step, all so far' },
+    { key: 'chain', kind: 'trail-path', label: 'the path so far, the last 150 steps darker' },
+    { key: 'chainall', kind: 'path', label: 'the path from the start' },
+    { key: 'start', kind: 'start', label: 'the start' },
+    { key: 'state', kind: 'state', label: 'current state' },
+    { key: 'before', kind: 'before', label: 'state before this step' },
+    { key: 'gradient', kind: 'gradient', label: 'gradient part of this step' },
+    { key: 'noise', kind: 'noise', label: 'noise part of this step' },
+    { key: 'proposal', kind: 'proposal', label: 'the proposal' },
+    { key: 'rejected', kind: 'rejected', label: 'a rejected proposal' },
+    { key: 'trace', kind: 'trace', label: 'trace: ' + W.U_CAPTION },
+    { key: 'tracew', kind: 'trace-dark', label: 'trace: $w = (x_1 - x_2)/\\sqrt{2}$, across it' },
+    { key: 'point', kind: 'state', label: 'the point $x$: drag it' },
+    { key: 'probe', kind: 'probe-gradient', label: 'the gradient at $x$, length compressed' }
+  ];
+  const TRACE = { ylim: [-4.5, 4.5], yticks: [-4, 0, 4], name: '$u$', xname: 'step', window: 400, whole: true };
+  // Nothing the room has seen vanishes during a run: every state since the reset (the first MAX) stays as a faint dot and
+  // every move as a faint line, on a layer under the contours; the last 150 steps are drawn as before on top.
+  const MAX = 20000;
+  // Where noise can never be on, u and w side by side: w (across the ridge) collapses in a few gradient steps, u takes
+  // about two hundred at eps = 0.3. The axis name "u, w" is about 65 units wide: the frame starts at 92, not 66, so the
+  // name clears the tick labels.
+  // a 250-step window: the run from the deck's start stops near step 220, and w's collapse needs room at the left
+  const TRACE_UW = Object.assign({}, TRACE, { name: '$u,\\ w$', nameX: 14, left: 92, window: 250 });
+  // A gradient-only run with data-switches stops itself this close to the mode: the path has reached one point.
+  const STOP_R = 0.005;
+
+  function comboName(G, N, A) {
+    if (!N) return G ? 'gradient steps' : 'no move';
+    if (!G) return A ? 'random-walk Metropolis' : 'random walk without an accept step';
+    return A ? 'Langevin proposal with the Hastings correction' : 'Euler–Maruyama';
+  }
+  // What one step does in each mode; lead is "Each Step" before the first step and "Playing: each step" during Play.
+  // The drift is written (eps^2/2) grad log pi(x) in the narration: an inline fraction would make that line taller.
+  function modeSentence(G, N, A, lead) {
+    const drift = '$(\\epsilon^2/2)\\nabla\\log\\pi(x)$', z = '$Z \\sim \\mathcal{N}(\\mathbf{0}, \\mathbf{I})$';
+    if (!G && !N) return 'With gradient and noise both off, a step does not move the state.';
+    if (!N) return lead + ' moves $x$ by ' + drift + ', along the gradient.';
+    if (!G) return A ? lead + ' proposes $y = x + \\epsilon Z$, ' + z + ', and accepts it with probability $\\alpha(x, y)$ or stays at $x$.'
+      : lead + ' moves $x$ by $\\epsilon Z$, ' + z + ', with no accept step.';
+    return A ? lead + ' proposes $y = x + (\\epsilon^2/2)\\nabla\\log\\pi(x) + \\epsilon Z$, ' + z +
+      ', and accepts it with probability $\\alpha(x, y)$ or stays at $x$.'
+      : lead + ' adds the gradient part ' + drift + ' and a noise part $\\epsilon Z$, ' + z + ', with no accept step.';
+  }
+  function clampD(p) { return [Math.max(D[0], Math.min(D[1], p[0])), Math.max(D[0], Math.min(D[1], p[1]))]; }
+  function inFrame(p) { return p[0] >= D[0] && p[0] <= D[1] && p[1] >= D[0] && p[1] <= D[1]; }
+
+  // ---------------------------------------------------------------- cloud mode (data-cloud="1")
+  // The proposal distribution from one point x as data-n draws, fixed per run, so the cloud moves rigidly when x, the
+  // scale, or the Gradient switch changes. No chain and no stepping; "New cloud" draws the next run.
+  const CLOUD_LEGEND = [
+    { key: 'contours', kind: 'contours', label: '50% and 95% contours of the target' },
+    { key: 'state', kind: 'state', label: 'the current state $x$: drag it' },
+    { key: 'center', kind: 'cloud-center', label: 'center of the cloud' },
+    { key: 'gradient', kind: 'gradient', label: 'gradient step, $(\\epsilon^2/2)\\nabla\\log\\pi(x)$' },
+    { key: 'accepted', kind: 'accepted', label: 'a proposal that would be accepted' },
+    { key: 'rejected', kind: 'rejected-dot', label: 'a proposal that would be rejected' }
+  ];
+  // one compute over this many draws measured 1.2 to 1.4 ms in Edge (2.0 ms with the draw), well inside a pointermove
+  const CLOUD_M = 100000;
+
+  function cloud(host) {
+    const target = W.bvn(0.9), legendOn = host.bool('legend', false), narrOn = host.bool('narrate', false);
+    const hasSwitch = host.bool('gradientSwitch', false);
+    let G = host.bool('gradient', false);
+    // week 12's random walk calls its step SD s; once a gradient can enter, the scale is the step size epsilon
+    const sym = !G && !hasSwitch ? 's' : '\\epsilon';
+    let scale = Math.max(0.05, Math.min(1.5, host.num('eps', 0.5)));
+    let x = clampD(host.pair('start', [-1.2, 0.2]));
+    const n = Math.max(1, Math.min(5000, Math.round(host.num('n', 300))));
+    // the readouts' shares are over CLOUD_M draws, so they are properties of the proposal and match the slide's R numbers;
+    // the first n of them (the same stream positions as the dots alone would take) are the ones plotted
+    let run = 0, S, Z, U, res, sh, computeMs = 0;
+    function draws() {
+      S = W.cloudDraws(host.rng(run), n, CLOUD_M);
+      Z = new Array(n); U = new Array(n);
+      for (let k = 0; k < n; k++) { Z[k] = [S.Z[2 * k], S.Z[2 * k + 1]]; U[k] = S.U[k]; }
+    }
+    function compute() {
+      const t0 = performance.now();
+      res = W.cloud(target, x, scale, G, Z, U);
+      sh = W.cloudShares(target, x, scale, G, S.Z, S.U);
+      computeMs = performance.now() - t0;
+    }
+    draws(); compute();
+    if (legendOn || narrOn) host.fillMin = 500;
+
+    let plot, ro, legend, narr, dragging = false;
+    function build(H0) {
+      host.clear();
+      const H = host.height(H0);
+      const TA = narrOn ? H - NARR_H - 12 : H;
+      const k = host.fill ? Math.max(1, Math.min(1.25, (TA - 70) / 380)) : 1;
+      let top = host.el;
+      if (narrOn) {
+        host.el.classList.add('w13-stack');
+        top = W.div('w13-top', host.el);
+        top.style.height = TA + 'px';
+      }
+      plot = host.plot(top, { size: TA, domain: D, names: ['$x_1$', '$x_2$'], ticks: [-3, -2, -1, 0, 1, 2, 3], scale: k });
+      plot.wrap.classList.add('w13-click');
+      const panel = W.div('w13-panel', top);
+      const row = W.div('w13-row', panel);
+      W.button(row, 'New cloud', function () { run++; draws(); compute(); host.redraw(); });
+      if (hasSwitch) {
+        const sw = W.toggle(row, { label: 'Gradient', checked: G, onChange: function (b) { G = b; compute(); host.redraw(); } });
+        sw.el.style.marginLeft = '20px';
+      }
+      const s = W.slider(row, {
+        label: '$' + sym + '$', min: 0.05, max: 1.5, step: 0.01, value: scale, digits: 2,
+        onInput: function (v) { scale = v; compute(); host.redraw(); }
+      });
+      s.el.classList.add('w13-push');
+      const big = !legendOn || TA >= 500;
+      ro = W.readouts(panel, [
+        { key: 'n', label: 'proposals shown' },
+        { key: 'up', label: 'uphill, $\\pi(y) > \\pi(x)$' },
+        { key: 'acc', label: 'accepted' }
+      ], big ? 'w13-big' : '');
+      ro.el.style.marginTop = big ? '24px' : '12px';
+      legend = legendOn ? new W.Legend(host, panel, CLOUD_LEGEND) : null;
+      if (legend) legend.el.style.marginTop = big ? '20px' : '8px';
+      narr = narrOn ? new W.Narration(host.el) : null;
+
+      const cv = plot.cv.el;
+      const moveTo = function (e) { x = clampD(plot.world(e)); compute(); host.redraw(); };
+      cv.addEventListener('pointerdown', function (e) {
+        e.preventDefault(); e.stopPropagation();
+        dragging = true; cv.setPointerCapture(e.pointerId);
+        moveTo(e);
+      });
+      cv.addEventListener('pointermove', function (e) {
+        if (!dragging) return;
+        e.preventDefault(); e.stopPropagation();
+        moveTo(e);
+      });
+      const release = function () { dragging = false; };
+      cv.addEventListener('pointerup', release);
+      cv.addEventListener('pointercancel', release);
+      ['touchstart', 'touchmove'].forEach(function (t) { cv.addEventListener(t, function (e) { e.stopPropagation(); }, { passive: true }); });
+      return H;
+    }
+    build(host.fill ? host.fillMin : (legendOn || narrOn) ? Math.max(host.data.height ? host.H : 0, 500) : host.H);
+
+    function caption() {
+      const t = W.tnum, pair = function (v) { return '(' + t(v[0]) + ',\\ ' + t(v[1]) + ')'; };
+      if (!G) {
+        return 'Random walk from $x = ' + pair(x) + '$: $y = x + ' + (sym === 's' ? 'sZ' : '\\epsilon Z') +
+          '$, $Z \\sim \\mathcal{N}(\\mathbf{0}, \\mathbf{I})$. The cloud is centered at $x$.';
+      }
+      return 'Langevin proposal from $x = ' + pair(x) + '$: the cloud is centered at $x + (\\epsilon^2/2)\\nabla\\log\\pi(x) = ' +
+        pair(res.center) + '$, with standard deviation $\\epsilon$ in each coordinate.';
+    }
+    function legendKeys() {
+      const k = ['contours', 'state', 'center'];
+      if (hasSwitch || G) k.push('gradient');
+      k.push('accepted', 'rejected');
+      return k;
+    }
+
+    function draw() {
+      const ctx = plot.begin(), fr = plot.fr, r = res;
+      W.clip(ctx, fr);
+      W.drawContours(ctx, fr, 0.9);
+      // rejected under accepted: where they pile up near the center, the blue of the accepted ones shows
+      for (let k = 0; k < n; k++) if (!r.accepted[k] && inFrame(r.ys[k])) W.drawDot(ctx, fr, r.ys[k], W.CLOUD_REJECTED);
+      for (let k = 0; k < n; k++) if (r.accepted[k] && inFrame(r.ys[k])) W.drawDot(ctx, fr, r.ys[k], W.CLOUD_ACCEPTED);
+      if (G) W.drawArrow(ctx, fr, x, r.center, { color: C.green, width: 3.5, head: 15 });
+      W.drawDot(ctx, fr, x, { fill: C.orange, r: 8, stroke: C.dark, lw: 2 });
+      W.drawCross(ctx, fr, r.center, W.CLOUD_CENTER);
+      ctx.restore();
+      plot.finish(ctx);
+      ro.set('n', W.fmtInt(n) + ' of ' + W.fmtInt(CLOUD_M));
+      ro.set('up', W.fmt(sh.nUp / CLOUD_M, 2));
+      ro.set('acc', W.fmt(sh.nAcc / CLOUD_M, 2));
+      if (legend) {
+        legend.show(legendKeys());
+        // the entry stays while the switch is off, so the legend does not jump; dimmed, since nothing green is drawn
+        legend.dim('gradient', hasSwitch && !G);
+        legend.draw();
+      }
+      if (narr) narr.setLive(caption());
+    }
+
+    return {
+      draw: draw,
+      client: function (p) { return plot.client(p); },
+      relayout: function (H) { build(H); },
+      step: function () {},
+      advance: function () {},
+      // test hooks: the whole sample, flat, and the mean time of one compute and draw over k repeats
+      sample: function () { return { z: Array.from(S.Z), u: Array.from(S.U) }; },
+      bench: function (k) {
+        const t0 = performance.now();
+        for (let q = 0; q < k; q++) { compute(); draw(); }
+        return (performance.now() - t0) / k;
+      },
+      state: function () {
+        let outside = 0;
+        for (let k = 0; k < n; k++) if (!inFrame(res.ys[k])) outside++;
+        return {
+          mode: 'cloud', G: G, hasSwitch: hasSwitch, sym: sym, scale: scale, x: x.slice(), run: run, n: n, M: CLOUD_M,
+          center: res.center.slice(), nUp: sh.nUp, nAcc: sh.nAcc, meanAlpha: sh.meanAlpha, shownUp: res.nUp,
+          shownAcc: res.nAcc, shareCenter: sh.center.slice(), computeMs: computeMs, outside: outside,
+          ys: res.ys.map(function (y) { return y.slice(); }), alpha: res.alpha.slice(), accepted: res.accepted.slice(),
+          uphill: res.uphill.slice(), u: U.slice(), z: Z.map(function (z) { return z.slice(); }),
+          legend: legend ? legend.keys.slice() : null,
+          narration: narr ? (narr.want !== undefined ? narr.want : narr.src) : null,
+          narrationShown: narr ? narr.front.dataset.src || null : null,
+          playing: false, layout: 'cloud', H: host.H, plotW: plot.width, plotInner: plot.inner, traceW: null, traceH: null
+        };
+      }
+    };
+  }
+
+  W.register('langevin', function (host) {
+    if (host.bool('cloud', false)) return cloud(host);
+    const probe = host.bool('probe', false), target = W.bvn(0.9);
+    const legendOn = host.bool('legend', false), narrOn = host.bool('narrate', false);
+    // the probe's fourth readout and the chain's data-switches belong to the layouts with a legend, narration, or fill
+    const pilot = legendOn || narrOn || host.fill;
+    let G = host.bool('gradient', true), N = host.bool('noise', true), A = host.bool('accept', true);
+    // data-switches: the switches this slide shows; absent, all three. An unlisted switch keeps its data-* value for good.
+    const swAttr = host.data.switches;
+    const swList = swAttr === undefined ? ['gradient', 'noise', 'accept']
+      : swAttr.split(',').map(function (s) { return s.trim().toLowerCase(); });
+    const sw = { gradient: swList.indexOf('gradient') >= 0, noise: swList.indexOf('noise') >= 0, accept: swList.indexOf('accept') >= 0 };
+    // readouts follow what can happen on the slide; with neither the accept step nor the noise, the distance from the mode
+    const showAcc = (A || sw.accept) && (N || sw.noise), showInside = N || sw.noise, showDist = !showAcc && !showInside;
+    // With fill and a legend the left column (name row, trace, readouts) is sized to what this slide can show: the
+    // Langevin name (522) only when all three ingredients can be on; the readout with a target column measures 498.
+    const need = (G || sw.gradient) && (N || sw.noise) && (A || sw.accept) ? BODY_MIN : showInside ? 500 : 440, LEG_MIN = 340;
+    let eps = Math.max(0.05, Math.min(0.9, host.num('eps', 0.3)));
+    let start = host.pair('start', probe ? [-1.5, 0.5] : [-2.6, 1.2]);
+    let probePt = start.slice();
+    let run = 0, rng, x, g, steps, acc, insideN, evals, path, allStates, trace, traceW, last, diverged, stopped, mode = 'start';
+    const layer = new W.TrailLayer();
+    // With data-switches, a gradient-only run keeps its whole route (it is the point of the slide) and stops at the mode.
+    const gOnly = function () { return swAttr !== undefined && G && !N; };
+
+    function reset() {
+      rng = host.rng(run);
+      x = start.slice(); g = null; steps = 0; acc = 0; insideN = 0; evals = 0;
+      path = [x]; allStates = [x]; trace = []; traceW = []; last = null; diverged = false; stopped = false;
+    }
+    function step() {
+      if (probe || diverged) return false;
+      const r = W.langevinStep(target, x, { eps: eps, gradient: G, noise: N, accept: A }, rng, g);
+      last = { from: x, drift: r.drift, noise: r.noise, y: r.y, accepted: r.accepted, prob: r.prob, tested: A && N, G: G, N: N };
+      x = r.x; g = r.g; steps++; evals += r.gradEvals;
+      if (A && N && r.accepted) acc++;
+      W.pushCap(path, x, gOnly() ? 5000 : 151);
+      if (allStates.length <= MAX) allStates.push(x);
+      W.pushCap(trace, (x[0] + x[1]) / Math.SQRT2, MAX);
+      if (showDist) W.pushCap(traceW, (x[0] - x[1]) / Math.SQRT2, MAX);
+      if (steps > 50 && target.inside95(x)) insideN++;
+      if (!(W.norm(x) < 1e6) || !isFinite(target.logp(x))) { diverged = true; return false; }
+      if (gOnly() && W.norm(x) < STOP_R) stopped = true;
+      return !stopped;
+    }
+    reset();
+    if (legendOn || narrOn) host.fillMin = probe ? 500 : 540;
+
+    // The layout is rebuilt at a new height by build(); the chain above is untouched by it.
+    let plot, tp = null, tA = null, nameEl = null, statusEl = null, tr = null, ro, legend = null, narr = null;
+    let dragging = false;
+    function build(H0) {
+      host.clear();
+      const H = host.height(H0);
+      const TA = narrOn ? H - NARR_H - 12 : H;
+      // with a legend and fill, the plot gives up width before the two columns beside it drop below what the slide
+      // shows (the left column, need) and LEG_MIN (the legend); size + 2 is the plot's width at k = 1.25
+      const PS = host.fill && legendOn && !probe ? Math.min(TA, W.W - 36 - (need + 24 + LEG_MIN) - 2) : TA;
+      const k = host.fill ? Math.max(1, Math.min(1.25, (PS - 70) / 380)) : 1;
+      let top = host.el;
+      if (narrOn) {
+        host.el.classList.add('w13-stack');
+        top = W.div('w13-top', host.el);
+        top.style.height = TA + 'px';
+      }
+      plot = host.plot(top, { size: PS, domain: D, names: ['$x_1$', '$x_2$'], ticks: [-3, -2, -1, 0, 1, 2, 3], scale: k });
+      plot.wrap.classList.add('w13-click');
+      const panel = W.div('w13-panel', top);
+      const panelW = W.W - plot.width - 36;
+      tp = tA = nameEl = statusEl = tr = null; legend = null; dragging = false;
+
+      if (probe) {
+        const rows = [
+          { key: 'pt', label: 'point $x$' },
+          { key: 'g1', label: '$\\partial\\log\\pi/\\partial x_1$' },
+          { key: 'g2', label: '$\\partial\\log\\pi/\\partial x_2$' }
+        ];
+        if (pilot) rows.push({ key: 'norm', label: 'length of the gradient, $\\lVert\\nabla\\log\\pi(x)\\rVert$' });
+        ro = W.readouts(panel, rows, 'w13-big');
+        ro.el.style.marginTop = '24px';
+        if (legendOn) {
+          legend = new W.Legend(host, panel, LEGEND);
+          legend.el.style.marginTop = '20px';
+        }
+      } else {
+        const rowA = W.div('w13-row', panel);
+        tp = host.transport(rowA, {
+          rate: 20,
+          step: function () { step(); mode = 'step'; },
+          tick: function (n) { for (let q = 0; q < n; q++) if (!step()) return false; return true; },
+          reset: function () { reset(); mode = 'start'; },
+          newRun: function () { run++; reset(); mode = 'start'; },
+          // Play in the stopped state does nothing: the loop is paused again before it draws a frame
+          onPlay: function (playing) { if (playing && stopped) { tp.loop.pause(); return; } mode = playing ? 'play' : 'paused'; }
+        });
+        const restart = function () { reset(); if (!tp.loop.playing) mode = 'start'; host.redraw(); };
+        const s = W.slider(rowA, {
+          label: '$\\epsilon$', min: 0.05, max: 0.9, step: 0.01, value: eps, digits: 2,
+          onInput: function (v) { eps = v; restart(); }
+        });
+        s.el.classList.add('w13-push');
+        const hasRowB = sw.gradient || sw.noise || sw.accept;
+        // With the legend on, the switches and the name row move into the left column (the legend column then starts under
+        // the buttons, room it needs for its entries) and the u caption becomes the legend's trace entry. A larger plot
+        // (fill) narrows the legend column first, keeping the left column wide enough for the name row.
+        let body = panel, bodyW = panelW;
+        if (legendOn) {
+          const legW = !host.fill ? LEG_W : Math.max(LEG_MIN, Math.min(LEG_W, panelW - 24 - need));
+          const two = W.div('w13-two', panel);
+          body = W.div('w13-col', two);
+          bodyW = panelW - legW - 24;
+          body.style.width = bodyW + 'px';
+          const lc = W.div('w13-col', two);
+          lc.style.width = legW + 'px';
+          legend = new W.Legend(host, lc, LEGEND);
+          legend.el.classList.add('w13-legend-tight');
+        }
+        if (hasRowB) {
+          const rowB = W.div('w13-row w13-short', body);
+          const changed = function () { if (tA) tA.enable(N); restart(); };
+          if (sw.gradient) W.toggle(rowB, { label: 'Gradient', checked: G, onChange: function (b) { G = b; changed(); } });
+          if (sw.noise) W.toggle(rowB, { label: 'Noise', checked: N, onChange: function (b) { N = b; changed(); } });
+          if (sw.accept) {
+            tA = W.toggle(rowB, { label: 'Accept step', checked: A, onChange: function (b) { A = b; changed(); } });
+            tA.enable(N);
+          }
+        }
+        const nameRow = W.div('w13-name', body);
+        nameEl = W.make('span', null, nameRow);
+        statusEl = W.make('span', 'w13-status', nameRow);
+        if (!legendOn) W.rich(W.make('span', 'w13-caption', nameRow), W.U_CAPTION);
+        const rows = [{ key: 'steps', label: 'steps' }];
+        if (showAcc) rows.push({ key: 'acc', label: 'acceptance rate' });
+        if (showInside) rows.push({ key: 'inside', label: 'inside the 95% contour', target: 'target' });
+        if (showDist) rows.push({ key: 'dist', label: 'distance from the mode, $\\lVert x\\rVert$' });
+        // the step the current state would take: it moves with the slider, so the role of epsilon shows before any Step
+        if (showDist) rows.push({ key: 'glen', label: 'length of the next step' });
+        rows.push({ key: 'evals', label: 'gradient evaluations' });
+        const roH = rows.length * 32 + (rows.length - 1) * 4;
+        tr = host.trace(body, bodyW, TA - 48 - (hasRowB ? 40 + 12 : 0) - 38 - roH - 3 * 12, showDist ? TRACE_UW : TRACE);
+        ro = W.readouts(body, rows);
+      }
+      narr = narrOn ? new W.Narration(host.el) : null;
+
+      const cv = plot.cv.el;
+      cv.addEventListener('pointerdown', function (e) {
+        e.preventDefault(); e.stopPropagation();
+        const p = clampD(plot.world(e));
+        if (probe) { probePt = p; dragging = true; cv.setPointerCapture(e.pointerId); }
+        else { start = p; if (tp) tp.loop.pause(); reset(); mode = 'start'; }
+        draw();
+      });
+      cv.addEventListener('pointermove', function (e) {
+        if (!dragging) return;
+        e.preventDefault(); e.stopPropagation();
+        probePt = clampD(plot.world(e)); draw();
+      });
+      const release = function () { dragging = false; };
+      cv.addEventListener('pointerup', release);
+      cv.addEventListener('pointercancel', release);
+      ['touchstart', 'touchmove'].forEach(function (t) { cv.addEventListener(t, function (e) { e.stopPropagation(); }, { passive: true }); });
+      return H;
+    }
+    function relayout(H) {
+      const playing = !!(tp && tp.loop.playing), keep = mode;
+      build(H);
+      mode = keep;
+      if (playing) tp.loop.play();
+    }
+    build(host.fill ? host.fillMin : (legendOn || narrOn) ? Math.max(host.data.height ? host.H : 0, probe ? 500 : 540) : host.H);
+
+    // Arrow length saturates (tanh) so the field stays readable across the 20-fold range of slopes on this target.
+    function fieldArrow(p, gr, maxLen) {
+      const m = Math.hypot(gr[0], gr[1]);
+      if (!(m > 1e-12)) return null;
+      const len = maxLen * Math.tanh(m / 6);
+      return [p[0] + gr[0] / m * len, p[1] + gr[1] / m * len];
+    }
+    function drawField(ctx, fr) {
+      const sp = 0.7;
+      for (let a = D[0] + sp / 2; a < D[1]; a += sp) {
+        for (let b = D[0] + sp / 2; b < D[1]; b += sp) {
+          const p = [a, b], q = fieldArrow(p, target.grad(p), 0.42);
+          if (q) W.drawArrow(ctx, fr, p, q, { color: C.green, width: 1.8, head: 8, alpha: 0.5 });
+        }
+      }
+    }
+
+    // The marks the current switches can draw, in the order of LEGEND.
+    function legendKeys() {
+      if (probe) return ['contours', 'field', 'point', 'probe'];
+      const k = ['contours'];
+      if (G) k.push('field');
+      if (showInside) k.push('dots');
+      if (G || N) k.push(gOnly() ? 'chainall' : 'chain');
+      k.push('start', 'state');
+      if (G || N) k.push('before');
+      if (G) k.push('gradient');
+      if (N) k.push('noise');
+      if (A && N) k.push('proposal', 'rejected');
+      k.push('trace');
+      if (showDist) k.push('tracew');
+      return k;
+    }
+    function narration() {
+      const t = W.tnum, pair = function (v) { return '(' + t(v[0]) + ',\\ ' + t(v[1]) + ')'; };
+      if (probe) return 'At $x = ' + pair(probePt) + '$: $\\nabla\\log\\pi(x) = ' + pair(target.grad(probePt)) + '$. Drag the point.';
+      if (diverged) {
+        return 'Diverged: the state is more than $10^6$ from the mode after ' + W.fmtInt(steps) + (steps === 1 ? ' step' : ' steps') +
+          '. Reset to start again.';
+      }
+      if (stopped && mode !== 'step') {
+        return 'Stopped after ' + W.fmtInt(steps) + (steps === 1 ? ' step' : ' steps') + ': the state is within 0.005 of the mode. ' +
+          'The path has reached one point and drawn no sample.';
+      }
+      if (mode === 'play') return modeSentence(G, N, A, 'Playing: each step');
+      if (mode === 'step' && last) {
+        const parts = [];
+        if (last.G) parts.push('Gradient part: $(\\epsilon^2/2)\\nabla\\log\\pi(x) = ' + pair(last.drift) + '$.');
+        if (last.N) parts.push('Noise part: $\\epsilon Z = ' + pair(last.noise) + '$.');
+        if (last.tested) {
+          parts.push('Proposal: $y = ' + pair(last.y) + '$.');
+          parts.push('Acceptance probability $\\alpha(x, y) = ' + t(last.prob) + '$: ' +
+            (last.accepted ? 'accepted.' : 'rejected, the chain stays at $x$.'));
+        } else if (last.G || last.N) parts.push('New state: $' + pair(last.y) + '$.');
+        else parts.push('The state does not move.');
+        return parts.join(' ');
+      }
+      if (mode === 'paused' && steps > 0) {
+        return 'Paused at $x = ' + pair(x) + '$' + (inFrame(x) ? '' : ', outside the plot,') + ' after ' + W.fmtInt(steps) +
+          (steps === 1 ? ' step' : ' steps') + '. Step shows one step at a time.';
+      }
+      return 'Start at $x = ' + pair(start) + '$. ' + modeSentence(G, N, A, 'Each Step');
+    }
+
+    function draw() {
+      const ctx = plot.begin(), fr = plot.fr;
+      W.clip(ctx, fr);
+      if (G || probe) drawField(ctx, fr);
+      if (!probe) { ctx.restore(); layer.draw(ctx, plot.cv, fr, allStates, allStates); W.clip(ctx, fr); W.drawContourHalo(ctx, fr, 0.9); }
+      W.drawContours(ctx, fr, 0.9);
+      if (probe) {
+        const q = fieldArrow(probePt, target.grad(probePt), 1.5);
+        if (q) W.drawArrow(ctx, fr, probePt, q, { color: C.green, width: 5, head: 22 });
+        W.drawDot(ctx, fr, probePt, { fill: C.orange, r: 8, stroke: C.dark, lw: 2 });
+      } else {
+        W.drawPath(ctx, fr, path, { color: C.blue, width: 2, alpha: 0.55 });
+        W.drawDots(ctx, fr, path, { color: C.blue, r: 3, alpha: 0.7 });
+        W.drawSquare(ctx, fr, start, W.START_MARK);
+        const moved = last && (last.G || last.N);
+        // The step's arrows start from the state before it, drawn hollow as in the Gibbs widget. They are drawn over
+        // the state dot, so a noise part shorter than the dot's radius still shows; the proposal ring comes last, wide
+        // enough to show around the state when the proposal is accepted.
+        if (moved) W.drawDot(ctx, fr, last.from, { fill: C.panel, r: 6, stroke: C.blue, lw: 2.5 });
+        W.drawDot(ctx, fr, x, { fill: C.orange, r: 8, stroke: C.dark, lw: 2 });
+        if (moved) {
+          const mid = [last.from[0] + last.drift[0], last.from[1] + last.drift[1]];
+          if (last.G) W.drawArrow(ctx, fr, last.from, mid, { color: C.green, width: 3.5, head: 15 });
+          if (last.N) W.drawArrow(ctx, fr, mid, last.y, { color: C.blue, width: 3, head: 14, dash: [8, 7] });
+        }
+        if (moved && last.tested) {
+          W.drawDot(ctx, fr, last.y, { r: 12, stroke: C.blue, lw: 2.5 });
+          if (!last.accepted) W.drawCross(ctx, fr, last.y, { color: C.red, size: 10, width: 4 });
+        }
+      }
+      ctx.restore();
+      plot.finish(ctx);
+      if (legend) { legend.show(legendKeys()); legend.draw(); }
+      // the probe's caption follows a drag, so it typesets at MathJax's pace (setLive); a Step's caption is set once
+      if (narr) { if (probe) narr.setLive(narration()); else narr.set(narration()); }
+
+      if (probe) {
+        const gr = target.grad(probePt);
+        ro.set('pt', '(' + W.fmt(probePt[0], 2) + ', ' + W.fmt(probePt[1], 2) + ')');
+        ro.set('g1', W.fmt(gr[0], 2));
+        ro.set('g2', W.fmt(gr[1], 2));
+        if (pilot) ro.set('norm', W.fmt(Math.hypot(gr[0], gr[1]), 2));
+        return;
+      }
+      nameEl.textContent = comboName(G, N, A);
+      statusEl.textContent = diverged ? 'diverged' : '';
+      tr.draw(trace, steps, C.blue, null, showDist ? [{ vals: traceW, color: C.dark }] : null);
+      ro.set('steps', W.fmtInt(steps));
+      if (showAcc) ro.set('acc', A && N && steps > 0 ? W.fmt(acc / steps, 2) : 'n/a');
+      // a deterministic path is not a sample: no share beside the target
+      if (showInside) ro.set('inside', N && steps > 50 ? W.fmt(insideN / (steps - 50), 2) : 'n/a', '0.95');
+      if (showDist) ro.set('dist', W.fmt(W.norm(x), 2));
+      if (showDist) ro.set('glen', W.fmt(eps * eps / 2 * Math.hypot.apply(null, target.grad(x)), 2));
+      ro.set('evals', W.fmtInt(evals));
+    }
+
+    return {
+      draw: draw,
+      client: function (p) { return plot.client(p); },
+      relayout: relayout,
+      step: function () { const r = step(); mode = 'step'; return r; },
+      advance: function (n) { for (let q = 0; q < n; q++) if (!step()) break; if (n > 0) mode = 'paused'; },
+      state: function () {
+        return {
+          probe: probe, G: G, N: N, A: A, eps: eps, run: run, steps: steps, x: x.slice(), start: start.slice(),
+          acc: A && N && steps ? acc / steps : NaN, inside: N && steps > 50 ? insideN / (steps - 50) : NaN,
+          evals: evals, diverged: diverged, stopped: stopped, probePt: probePt.slice(), probeGrad: target.grad(probePt),
+          pathLen: path.length, pathStart: path[0].slice(), seriesU: trace.slice(), seriesW: showDist ? traceW.slice() : null,
+          statesN: allStates.length - 1, movesN: allStates.length - 1, traceN: trace.length, traceXlim: tr ? tr.fr.xlim.slice() : null,
+          layerMs: layer.lastMs,
+          lastAccepted: last ? last.accepted : null,
+          last: last ? { from: last.from.slice(), drift: last.drift.slice(), noise: last.noise.slice(), y: last.y.slice(),
+                         prob: last.prob, accepted: last.accepted, tested: last.tested } : null,
+          legend: legend ? legend.keys.slice() : null,
+          narration: narr ? (narr.want !== undefined ? narr.want : narr.src) : null,
+          narrationShown: narr ? narr.front.dataset.src || null : null,
+          playing: tp ? tp.loop.playing : false, switches: swList.slice(), inFrame: inFrame(x),
+          readoutKeys: probe ? null : ['steps'].concat(showAcc ? ['acc'] : [], showInside ? ['inside'] : [], showDist ? ['dist', 'glen'] : [], ['evals']),
+          probeNorm: Math.hypot.apply(null, target.grad(probePt)),
+          layout: legendOn && !probe ? 'side' : 'plain', H: host.H, plotW: plot.width, plotInner: plot.inner,
+          traceW: tr ? tr.cv.w : null, traceH: tr ? tr.cv.h : null
         };
       }
     };
@@ -4556,42 +5514,80 @@ window.QuartoSupport = function () {
       });
     </script>
     
+
     <script>
+
       // htmlwidgets need to know to resize themselves when slides are shown/hidden.
+
       // Fire the "slideenter" event (handled by htmlwidgets.js) when the current
+
       // slide changes (different for each slide format).
+
       (function () {
+
         // dispatch for htmlwidgets
+
         function fireSlideEnter() {
+
           const event = window.document.createEvent("Event");
+
           event.initEvent("slideenter", true, true);
+
           window.document.dispatchEvent(event);
+
         }
+
+    
 
         function fireSlideChanged(previousSlide, currentSlide) {
+
           fireSlideEnter();
 
+    
+
           // dispatch for shiny
+
           if (window.jQuery) {
+
             if (previousSlide) {
+
               window.jQuery(previousSlide).trigger("hidden");
+
             }
+
             if (currentSlide) {
+
               window.jQuery(currentSlide).trigger("shown");
+
             }
+
           }
+
         }
+
+    
 
         // hookup for slidy
+
         if (window.w3c_slidy) {
+
           window.w3c_slidy.add_observer(function (slide_num) {
+
             // slide_num starts at position 1
+
             fireSlideChanged(null, w3c_slidy.slides[slide_num - 1]);
+
           });
+
         }
 
+    
+
       })();
+
     </script>
+
+    
 
     <script id="quarto-html-after-body" type="application/javascript">
       window.document.addEventListener("DOMContentLoaded", function (event) {
