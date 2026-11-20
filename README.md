@@ -32,6 +32,7 @@ Lecture slides for STAT 536, Fall 2026.
 | 8–9 | The EM Algorithm | [View](https://soumojitdas.github.io/stat536/labs/lab08-em-algorithm-handout.html) |
 | 11 | Markov Chains | [View](https://soumojitdas.github.io/stat536/labs/lab09-markov-chains-handout.html) ([Solutions](https://soumojitdas.github.io/stat536/labs/lab09-markov-chains.html)) |
 | 12 | Metropolis–Hastings | [View](https://soumojitdas.github.io/stat536/labs/lab10-metropolis-hastings-handout.html) ([Solutions](https://soumojitdas.github.io/stat536/labs/lab10-metropolis-hastings.html)) |
+| 13 | Gibbs Sampling and Langevin Proposals | [View](https://soumojitdas.github.io/stat536/labs/lab11-gibbs-and-langevin-handout.html) ([Solutions](https://soumojitdas.github.io/stat536/labs/lab11-gibbs-and-langevin.html)) |
 
 ## Instructor
 
